@@ -1,33 +1,7 @@
-
-#loginlayer {
-    display: none;
-    justify-content: center;
-    align-content: stretch;
-    align-items: center;
-    position: fixed;
-    height: 100%;
+#mainimg {
     width: 100%;
-    top: 0px;
-    z-index: 999;
-    background-color: rgba(0, 0, 0, 0.6);
-}
-
-#loginform {
-    width: 300px;
-    flex-grow:1;
-}
-
-#closeButton {
-    padding: 15px;
-    text-align: center;
-}
-
-#myconfig {
-    display: none;
-    justify-content: space-between;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.2);
-    padding: 1% 2%;
+    position: absolute;
+    z-index: -1;
 }
 
 #welcome {
@@ -38,29 +12,20 @@
 
 }
 
+#myconfig {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 1% 2%;
+}
+
 #mycontent {
     display: none;
     justify-content: space-around;
     align-items: flex-start;
     height: 80vh;
     width: 100%;
-    //background-image: url({{ url_for('static', filename='main.jpg') }});
-    //background-image: url("/static/main.jpg");
-    //background-size:cover;
-}
-
-#content {
-    position: relative;
-    left: 5%;
-    height: 800px;
-    display: none;
-}
-
-
-#mainimg {
-    width: 100%;
-    position: absolute;
-    z-index: -1;
 }
 
 .info_box {

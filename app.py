@@ -1,13 +1,14 @@
 from bs4 import BeautifulSoup
+
 from selenium import webdriver
 import schedule
 import time
+
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for
 from pymongo import MongoClient
-import jwt      # JWT 패키지를 사용합니다. (설치해야할 패키지 이름: PyJWT)
-import datetime     # 토큰에 만료시간을 줘야하기 때문에, datetime 모듈도 사용합니다.
-# import hashlib      # 회원가입 시엔, 비밀번호를 암호화하여 DB에 저장해두는 게 좋습니다.
-import bcrypt
+import jwt      # (패키지: PyJWT)
+import datetime     # 토큰 만료시간
+import bcrypt   # 암호화
 from functools import wraps
 import requests
 
@@ -22,44 +23,29 @@ SECRET_KEY = '!r1l1a1x2o2g3k3s3'        # JWT 토큰을 만들 때 필요한 비
 def home():
    return render_template('index.html')
 
-@app.route('/login')
-def login():
-   return render_template('login.html')
-
 @app.route('/register')
 def register():
    return render_template('register.html')
-
 
 @app.route('/myport')
 def myport_update():
    return render_template('myport.html')
 
 
-# [회원가입 API]
-# id, pw, nickname을 받아서, mongoDB에 저장합니다.
-# 저장하기 전에, pw를 sha256 방법(=단방향 암호화. 풀어볼 수 없음)으로 암호화해서 저장합니다.
 @app.route('/api/register', methods=['POST'])
 def api_register():
    id = request.form['id']
    pw = request.form['pw']
-
    pw_hash = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
-
    db.user.insert_one({'id':id,'pw':pw_hash,'notice_rate':'','port':[]})
+   return jsonify({'result': 'success', 'msg':'회원가입이 완료되었습니다.'})
 
-   return jsonify({'result': 'success'})
-
-# [로그인 API]
-# id, pw를 받아서 맞춰보고, 토큰을 만들어 발급합니다.
 @app.route('/api/login', methods=['POST'])
 def api_login():
    id = request.form['id']
    pw = request.form['pw']
-
    user = db.user.find_one({'id': id},{'_id':False})
 
-   # 찾으면 JWT 토큰을 만들어 발급합니다.
    if bcrypt.checkpw(pw.encode('utf-8'), user['pw']):
       # JWT 토큰에는, payload와 시크릿키가 필요합니다.
       # 시크릿키가 있어야 토큰을 디코딩(=풀기) 해서 payload 값을 볼 수 있습니다.
@@ -70,120 +56,75 @@ def api_login():
          'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=60*60*24)   #24시간 유효
       }
       token = jwt.encode(payload, SECRET_KEY, algorithm='HS256').decode('utf-8')
-
-      # token을 줍니다.
       return jsonify({'result': 'success','token':token})
-   # 찾지 못하면
    else:
       return jsonify({'result': 'fail', 'msg':'아이디/비밀번호가 일치하지 않습니다.'})
 
-# [유저 정보 확인 API]
-# 로그인된 유저만 call 할 수 있는 API입니다.
-# 유효한 토큰을 줘야 올바른 결과를 얻어갈 수 있습니다.
-# (그렇지 않으면 남의 장바구니라든가, 정보를 누구나 볼 수 있겠죠?)
-@app.route('/api/nick', methods=['GET'])
+@app.route('/api/valid', methods=['GET'])
 def api_valid():
-   # 토큰을 주고 받을 때는, 주로 header에 저장해서 넘겨주는 경우가 많습니다.
-   # header로 넘겨주는 경우, 아래와 같이 받을 수 있습니다.
-   token_receive = request.headers['token']
-
-   # try / catch 문?
-   # try 아래를 실행했다가, 에러가 있으면 except 구분으로 가란 얘기입니다.
-
-   try:
-      # token을 시크릿키로 디코딩합니다.
-      # 보실 수 있도록 payload를 print 해두었습니다. 우리가 로그인 시 넣은 그 payload와 같은 것이 나옵니다.
-      payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
-      print(payload)
-
-      # payload 안에 id가 들어있습니다. 이 id로 유저정보를 찾습니다.
-      # 여기에선 그 예로 닉네임을 보내주겠습니다.
-      userinfo = db.user.find_one({'id':payload['id']},{'_id':0})
-      return jsonify({'result': 'success','id':userinfo['id']})
-   except jwt.ExpiredSignatureError:
-      # 위를 실행했는데 만료시간이 지났으면 에러가 납니다.
-      return jsonify({'result': 'fail', 'msg':'로그인 시간이 만료되었습니다.'})
-
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        access_token = request.headers.get('token')
-        if access_token is not None:
-            try:
-                payload = jwt.decode(access_token, SECRET_KEY, algorithms=['HS256'])
-            except jwt.InvalidTokenError:
-                payload = None
-
-            if payload is None:
-                return Response(status=401)
-
-            user_id = payload['id']
-            g.user_id = user_id
-            g.user = get_user_info(user_id) if user_id else None
-        else:
-            return Response(status=401)
-
-        return f(*args, **kwargs)
-
-    return decorated_function
-
+    access_token = request.headers.get('token')
+    if access_token is not None:
+        try:
+            jwt.decode(access_token, SECRET_KEY, algorithms=['HS256'])
+            return jsonify({'result': 'success','msg':'토큰이 유효합니다.'})
+        except jwt.InvalidTokenError:
+            return jsonify({'result': 'fail', 'msg': '토큰이 만료되었습니다.'})
+    else:
+        return jsonify({'result': 'fail', 'msg': '토큰이 없습니다.'})
 
 def token_payload_read():
     access_token = request.headers.get('token')
     if access_token is not None:
         try:
             payload = jwt.decode(access_token, SECRET_KEY, algorithms=['HS256'])
+            return payload
         except jwt.InvalidTokenError:
-            return Response(status=401)
-        return payload
+            return None
     else:
-        return Response(status=401)
+        return None
 
 @app.route('/api/myport', methods=['GET'])
 def myport():
-    token_receive = request.headers['token']
-    try:
-        payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
+    payload = token_payload_read()
+    if payload is not None:
         userinfo = db.user.find_one({'id': payload['id']}, {'_id': 0})
         ports = userinfo['port']
         if len(ports) != 0:
-            #ports_info = []
-            #for port in ports:
-            #    port_info = get_stock(port['code'])
-            #    ports_info.append(port_info)
             return jsonify({'result': 'success', 'ports_info': ports})
         else:
-            return jsonify({'result': 'fail', 'msg': '등록된 종목이 없습니다.'})
-    except jwt.ExpiredSignatureError:
-        # 위를 실행했는데 만료시간이 지났으면 에러가 납니다.
-        return jsonify({'result': 'fail', 'msg': '로그인 시간이 만료되었습니다.'})
+            return jsonify({'result': 'success_but', 'msg': '등록된 종목이 없습니다.'})
+    else:
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
 @app.route('/api/addport', methods=['POST'])
 def add_port():
     user = token_payload_read()
-    user_data = db.user.find_one({'id': user['id']}, {'_id': 0})
-    add_code = request.form['code']
+    if user is not None:
+        user_data = db.user.find_one({'id': user['id']}, {'_id': 0})
+        add_code = request.form['code']
 
-    if any(add_code in code for code in user_data['port']):
-        return jsonify({'result': 'success', 'msg': '해당 종목은 이미 등록되어 있습니다!'})
+        if any(add_code in code for code in user_data['port']):
+            return jsonify({'result': 'success', 'msg': '해당 종목은 이미 등록되어 있습니다!'})
+        else:
+            port_info = get_stock(add_code)
+            user_data['port'].append({'code': add_code, 'name': port_info['name']})
+            db.user.update_one({'id': user['id']}, {'$set': {'port': user_data['port']}})
+            return jsonify({'result': 'success', 'msg': '종목이 추가되었습니다!'})
     else:
-        port_info = get_stock(add_code)
-        user_data['port'].append({'code':add_code,'name':port_info['name']})
-        db.user.update_one({'id': user['id']}, {'$set': {'port': user_data['port']}})
-        return jsonify({'result': 'success', 'msg': '종목이 추가되었습니다!'})
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
 @app.route('/api/deleteport', methods=['POST'])
 def delete_port():
     user = token_payload_read()
-    user_data = db.user.find_one({'id': user['id']})
-    delete_code = request.form['code']
-    delete_name = request.form['name']
-    #user_data['code'].remove(delete_code)
-    del user_data['port'][user_data['port'].index({'code':delete_code,'name':delete_name})]
-    db.user.update_one({'id': user['id']}, {'$set': {'port': user_data['port']}})
-    return jsonify({'result': 'success', 'msg': '종목이 삭제되었습니다!'})
-
+    if user is not None:
+        user_data = db.user.find_one({'id': user['id']})
+        delete_code = request.form['code']
+        delete_name = request.form['name']
+        del user_data['port'][user_data['port'].index({'code': delete_code, 'name': delete_name})]
+        db.user.update_one({'id': user['id']}, {'$set': {'port': user_data['port']}})
+        return jsonify({'result': 'success', 'msg': '종목이 삭제되었습니다!'})
+    else:
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
 def get_stock(code):
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
@@ -199,6 +140,9 @@ def get_stock(code):
     rate = soup.select_one('#disArr\[0\] > span').text
 
     return ({'code':code, 'name':name, 'current_price':current_price, 'rate':rate})
+
+
+
 
 
 def get_my_stock():
@@ -259,3 +203,27 @@ if __name__ == "__main__":
 if __name__ == '__main__':
    app.run('0.0.0.0',port=5000,debug=True)
 ''''''
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        access_token = request.headers.get('token')
+        if access_token is not None:
+            try:
+                payload = jwt.decode(access_token, SECRET_KEY, algorithms=['HS256'])
+            except jwt.InvalidTokenError:
+                payload = None
+
+            if payload is None:
+                return Response(status=401)
+
+            user_id = payload['id']
+            g.user_id = user_id
+            g.user = get_user_info(user_id) if user_id else None
+        else:
+            return Response(status=401)
+
+        return f(*args, **kwargs)
+
+    return decorated_function

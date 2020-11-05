@@ -13,7 +13,6 @@ function showPort() {
         success: function (response) {
             if (response['result'] == 'success') {
                 let ports = response['ports_info']
-                console.log(response)
                 for (let i = 0; i < ports.length; i++){
                     let {code, name} = ports[i]
                     let temphtml =`<tr>
@@ -26,12 +25,15 @@ function showPort() {
                                    </tr>`
                     $('#port-box').append(temphtml);
                 }
-            } else {
+            } else if(response['result'] == 'success_but') {
                 let msg = response['msg']
                 let temphtml = `<tr>
                                     <td colspan="4">${msg}</td>
                                 </tr>`
                 $('#port-box').append(temphtml);
+            } else {
+                let msg = response['msg'];
+                alert(msg);
             }
         }
     });
