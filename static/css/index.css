@@ -1,0 +1,106 @@
+body {
+    background-color: black;
+    color: azure;
+}
+
+#header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-content: stretch;
+    align-items: center;
+    padding-bottom: 2px;
+}
+
+#title {
+    font-size: 3rem;
+    margin-left: 2%;
+    flex-grow: 0;
+}
+
+.blank {
+    flex-grow:10;
+    width: 50px;
+}
+
+#loginbuttonbox {
+    padding-left: 5px;
+    margin-left: 2%;
+    margin-right: 2%;
+    flex-grow: 0;
+}
+
+#loginlayer {
+    display: none;
+    justify-content: center;
+    align-content: stretch;
+    align-items: center;
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    top: 0px;
+    z-index: 999;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+#loginform {
+    width: 300px;
+    flex-grow:1;
+}
+
+#closeButton {
+    padding: 15px;
+    text-align: center;
+}
+
+#myconfig {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 1% 2%;
+}
+
+
+#body {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    height: 100vh;
+    width: 100%;
+    //background-image: url({{ url_for('static', filename='main.jpg') }});
+    //background-image: url("/static/main.jpg");
+    //background-size:cover;
+}
+
+#content {
+    position: relative;
+    left: 5%;
+    height: 800px;
+    display: none;
+}
+
+
+#mainimg {
+    width: 100%;
+    position: absolute;
+    z-index: -1;
+}
+
+.info_box {
+    width: 40%;
+    position: relative;
+    background-color: coral;
+
+}
+
+.myport_table {
+    width: 100%;
+}
+
+#myport {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+}
