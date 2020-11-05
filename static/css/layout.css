@@ -1,0 +1,31 @@
+body {
+    background-color: black;
+    color: azure;
+}
+
+header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-content: stretch;
+    align-items: center;
+    padding-bottom: 2px;
+}
+
+#title {
+    font-size: 3rem;
+    margin-left: 2%;
+    flex-grow: 0;
+}
+
+.blank_width_50px {
+    flex-grow:10;
+    width: 50px;
+}
+
+#nav_buttonbox {
+    padding-left: 5px;
+    margin-left: 2%;
+    margin-right: 2%;
+    flex-grow: 0;
+}

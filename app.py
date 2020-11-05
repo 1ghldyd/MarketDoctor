@@ -9,6 +9,7 @@ import datetime     # 토큰에 만료시간을 줘야하기 때문에, datetime
 # import hashlib      # 회원가입 시엔, 비밀번호를 암호화하여 DB에 저장해두는 게 좋습니다.
 import bcrypt
 from functools import wraps
+import requests
 
 app = Flask(__name__)
 
@@ -45,7 +46,7 @@ def api_register():
 
    pw_hash = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
 
-   db.user.insert_one({'id':id,'pw':pw_hash,'notice_rate':'','code':[]})
+   db.user.insert_one({'id':id,'pw':pw_hash,'notice_rate':'','port':[]})
 
    return jsonify({'result': 'success'})
 
@@ -128,37 +129,79 @@ def login_required(f):
     return decorated_function
 
 
+def token_payload_read():
+    access_token = request.headers.get('token')
+    if access_token is not None:
+        try:
+            payload = jwt.decode(access_token, SECRET_KEY, algorithms=['HS256'])
+        except jwt.InvalidTokenError:
+            return Response(status=401)
+        return payload
+    else:
+        return Response(status=401)
+
 @app.route('/api/myport', methods=['GET'])
 def myport():
     token_receive = request.headers['token']
     try:
         payload = jwt.decode(token_receive, SECRET_KEY, algorithms=['HS256'])
         userinfo = db.user.find_one({'id': payload['id']}, {'_id': 0})
-        port = userinfo['code']
-        #port = db.user.find_one({'id': payload['id']}, {'port': {$exists: true}})
-        if len(port) != 0:
-            #portData = get_my_stock(port)
-
-
-
-            return jsonify({'result': 'success', 'code': port})
+        ports = userinfo['port']
+        if len(ports) != 0:
+            #ports_info = []
+            #for port in ports:
+            #    port_info = get_stock(port['code'])
+            #    ports_info.append(port_info)
+            return jsonify({'result': 'success', 'ports_info': ports})
         else:
             return jsonify({'result': 'fail', 'msg': '등록된 종목이 없습니다.'})
     except jwt.ExpiredSignatureError:
         # 위를 실행했는데 만료시간이 지났으면 에러가 납니다.
         return jsonify({'result': 'fail', 'msg': '로그인 시간이 만료되었습니다.'})
 
-@app.route('/api/delete-port', methods=['POST'])
+@app.route('/api/addport', methods=['POST'])
+def add_port():
+    user = token_payload_read()
+    user_data = db.user.find_one({'id': user['id']}, {'_id': 0})
+    add_code = request.form['code']
+
+    if any(add_code in code for code in user_data['port']):
+        return jsonify({'result': 'success', 'msg': '해당 종목은 이미 등록되어 있습니다!'})
+    else:
+        port_info = get_stock(add_code)
+        user_data['port'].append({'code':add_code,'name':port_info['name']})
+        db.user.update_one({'id': user['id']}, {'$set': {'port': user_data['port']}})
+        return jsonify({'result': 'success', 'msg': '종목이 추가되었습니다!'})
+
+@app.route('/api/deleteport', methods=['POST'])
 def delete_port():
-    # 1. 클라이언트가 전달한 name_give를 name_receive 변수에 넣습니다.
-    code = request.form['code']
-    # 2. mystar 목록에서 delete_one으로 name이 name_receive와 일치하는 star를 제거합니다.
-    db.mystar.delete_one({'code': code})
-    # 3. 성공하면 success 메시지를 반환합니다.
-    return jsonify({'result': 'success', 'msg': 'delete 연결되었습니다!'})
+    user = token_payload_read()
+    user_data = db.user.find_one({'id': user['id']})
+    delete_code = request.form['code']
+    delete_name = request.form['name']
+    #user_data['code'].remove(delete_code)
+    del user_data['port'][user_data['port'].index({'code':delete_code,'name':delete_name})]
+    db.user.update_one({'id': user['id']}, {'$set': {'port': user_data['port']}})
+    return jsonify({'result': 'success', 'msg': '종목이 삭제되었습니다!'})
 
 
-def get_my_stock(port):
+def get_stock(code):
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
+    #data = requests.get('https://finance.naver.com/item/main.nhn?code=' + code, headers=headers)
+    url = requests.get('https://vip.mk.co.kr/newSt/price/daily.php?stCode=' + code, headers=headers)
+
+    data = url.content.decode('euc-kr','replace')
+    soup = BeautifulSoup(data, 'html.parser')
+
+    name = soup.select_one('title').text
+    name = name[0:name.find(code)-1]
+    current_price = soup.select_one('#lastTick\[6\] > font.f3_r').text
+    rate = soup.select_one('#disArr\[0\] > span').text
+
+    return ({'code':code, 'name':name, 'current_price':current_price, 'rate':rate})
+
+
+def get_my_stock():
     ### option 적용 ###
     options = webdriver.ChromeOptions()
     options.add_argument('headless')
@@ -171,8 +214,7 @@ def get_my_stock(port):
     ##################
 
     # 삼성전자, 네이버, SK텔레콤, SK이노베이션, 카카오
-    codes = port
-    myport = []
+    codes = ['005930','035420','017670','096770','035720']
 
     for code in codes:
         # 네이버 주식페이지 url을 입력합니다.
@@ -196,7 +238,6 @@ def get_my_stock(port):
         rate = soup.select_one('#header > div.end_header_topinfo > div.flick-container.major_info_wrp > div > div:nth-child(2) > div > div.stock_wrp > div.price_wrp > div > span.gap_rate > span.rate').text
 
         print(name,current_price,rate)
-        myport.append({'code':code,'name':name,'current_price':current_price,'rate':rate })
 
     print('-------')
     # 크롬을 종료합니다.

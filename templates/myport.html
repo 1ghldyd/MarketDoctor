@@ -26,15 +26,16 @@
 
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename = 'css/index.css') }}">
         <script src="{{ url_for('static', filename = 'myport.js') }}"></script>
-        <script>
 
-        </script>
+        <link rel="shortcut icon" href="#">
+
     </head>
     <body>
         <div>
-            <table class="table myport_table">
+            <table class="table myport_table" style="text-align: center">
                 <thead>
                 <tr>
+                    <th scope="col">번호</th>
                     <th scope="col">종목코드</th>
                     <th scope="col">종목명</th>
                     <th scope="col">제거</th>
@@ -45,13 +46,15 @@
                     <th scope="col"></th>
                     <th scope="col"></th>
                     <th scope="col"></th>
+                    <th scope="col"></th>
                 </tr>
                 </tbody>
             </table>
             <div>
                 <input id="input-code" class="form-control" placeholder="">
-                <button type="button" class="btn btn-light btn-sm" onclick="">추가하기</button>
+                <button type="button" class="btn btn-light btn-sm" onclick="addPort($('#input-code').val())">추가하기</button>
             </div>
+            <div id="backButton" onclick="backtothehome()">홈으로 돌아가기</div>
         </div>
     </body>
 </html>

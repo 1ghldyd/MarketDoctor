@@ -1,3 +1,5 @@
+{% extends 'layout.html' %}
+{% block content %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -54,9 +56,10 @@
         <button type="button" id="button_signup" class="btn btn-light btn-sm" onclick="signup()">회원가입</button>
     </div>
 </div>
-
 <img id="mainimg" src="{{ url_for('static', filename = 'main.jpg') }}" alt=""/>
-
+<div id="welcome">
+    <h1>로그인이 필요한 서비스입니다.</h1>
+</div>
 <div id="myconfig">
     <div>
         <h5>E-mail : <span id="user_id"></span></h5>
@@ -64,8 +67,7 @@
     </div>
     <div id="myconfigupdate">수정하기</div>
 </div>
-
-<div id="body">
+<div id="mycontent">
     <div id="myport" class="info_box">
         <div id="myportReadButton" onclick="myport()">불러오기</div>
         <div id="myportUpdateButton" onclick="myportPost()">수정하기</div>
@@ -96,3 +98,4 @@
 </div>
 </body>
 </html>
+{% endblock %}

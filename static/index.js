@@ -22,6 +22,9 @@ function valid_check() {
                 $('#button_signin').text("로그아웃")
                 document.getElementById("button_signin").style.display = 'inline'
                 document.getElementById("button_signup").style.display = 'none'
+                document.getElementById("welcome").style.display = 'none'
+                document.getElementById("mycontent").style.display = 'flex'
+                document.getElementById("myconfig").style.display = 'flex'
 
 
             } else {
@@ -55,6 +58,8 @@ function login() {
                 //window.location.href = '/'
                 $('#button_signin').text("로그아웃")
                 document.getElementById("button_signup").style.display = 'none'
+                document.getElementById("welcome").style.display = 'none'
+                document.getElementById("mycontent").style.display = 'flex'
                 document.getElementById("myconfig").style.display = 'flex'
                 closeLoginLayer()
                 setTimeout(function() {valid_check();},100)
@@ -75,7 +80,8 @@ function logout() {
 
     document.getElementById("button_signup").style.display = 'inline'
     document.getElementById("myconfig").style.display = 'none'
-    window.location.href = '/'
+    document.getElementById("welcome").style.display = 'block'
+    window.location.reload();
 }
 
 function signup() {
