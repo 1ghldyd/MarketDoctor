@@ -45,7 +45,7 @@ def api_register():
    id = request.form['id']
    pw = request.form['pw']
    pw_hash = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
-   db.user.insert_one({'id':id,'pw':pw_hash,'email':id,'notice_rate':'','port':[]})
+   db.user.insert_one({'id':id,'pw':pw_hash,'email':id,'notice_rate_up':'','notice_rate_down':'','port':[]})
    return jsonify({'result': 'success', 'msg':'회원가입이 완료되었습니다.'})
 
 @app.route('/api/login', methods=['POST'])
@@ -61,7 +61,6 @@ def api_login():
       # exp에는 만료시간을 넣어줍니다. 만료시간이 지나면, 시크릿키로 토큰을 풀 때 만료되었다고 에러가 납니다.
       payload = {
          'id': id,
-         'notice_rate':user_data['notice_rate'],
          'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=60*60*24)   #24시간 유효
       }
       token = jwt.encode(payload, SECRET_KEY, algorithm='HS256').decode('utf-8')
@@ -86,7 +85,17 @@ def api_myconfig():
     payload = token_payload_read()
     if payload is not None:
         user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
-        return jsonify({'result': 'success', 'payload':{'id': user_data['id'], 'notice_rate': user_data['notice_rate']}})
+        return jsonify({'result': 'success', 'payload':{'email': user_data['email'], 'notice_rate_up': user_data['notice_rate_up'], 'notice_rate_down': user_data['notice_rate_down']}})
+    else:
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
+
+@app.route('/api/myconfig', methods=['POST'])
+def myconfig():
+    payload = token_payload_read()
+    if payload is not None:
+        user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
+        db.user.update_one({'id': user_data['id']}, {'$set': {'email': request.form['email'], 'notice_rate_up': request.form['notice_rate_up'].replace('%', ''), 'notice_rate_down': request.form['notice_rate_down'].replace('%', '')}})
+        return jsonify({'result': 'success', 'msg': '설정이 저장되었습니다.'})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
@@ -119,17 +128,8 @@ def myport_refresh():
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
-@app.route('/api/myconfig', methods=['GET'])
-def myemail():
-    payload = token_payload_read()
-    if payload is not None:
-        user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
-        return jsonify({'result': 'success', 'email': user_data['email']})
-    else:
-        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
-
-@app.route('/api/myport', methods=['GET'])
-def myport():
+@app.route('/api/myport-modify', methods=['GET'])
+def myport_info():
     payload = token_payload_read()
     if payload is not None:
         user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
@@ -141,8 +141,8 @@ def myport():
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
-@app.route('/api/addport', methods=['POST'])
-def add_port():
+@app.route('/api/myport-modify-add', methods=['POST'])
+def myport_add():
     user = token_payload_read()
     if user is not None:
         user_data = db.user.find_one({'id': user['id']}, {'_id': 0})
@@ -158,8 +158,8 @@ def add_port():
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
-@app.route('/api/deleteport', methods=['POST'])
-def delete_port():
+@app.route('/api/myport-modify-del', methods=['POST'])
+def myport_del():
     user = token_payload_read()
     if user is not None:
         user_data = db.user.find_one({'id': user['id']})

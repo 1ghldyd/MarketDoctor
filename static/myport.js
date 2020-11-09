@@ -1,12 +1,12 @@
 $(document).ready(function () {
     $('#myport_box_modify').empty();
-    showPort();
+    showMyport();
 });
 
-function showPort() {
+function showMyport() {
     $.ajax({
         type: 'GET',
-        url: '/api/myport',
+        url: '/api/myport-modify',
         headers: {'token': $.cookie('mytoken')},
         data: {},
         success: function (response) {
@@ -18,7 +18,7 @@ function showPort() {
                                        <td>${i+1}</td>
                                        <td>${code}</td>
                                        <td>${name}</td>
-                                       <td><a href="#" onclick="deletePort('${code}','${name}')" class="card-footer-item has-text-danger">
+                                       <td><a href="#" onclick="delMyport('${code}','${name}')" class="card-footer-item has-text-danger">
                                            삭제<span class="icon"><i class="fas fa-ban"></i></span>
                                        </a></td>
                                    </tr>`;
@@ -38,10 +38,10 @@ function showPort() {
     });
 }
 
-function addPort(code) {
+function addMyport(code) {
     $.ajax({
         type: 'POST',
-        url: '/api/addport',
+        url: '/api/myport-modify-add',
         headers: {'token': $.cookie('mytoken')},
         data: {'code': code},
         success: function (response) {
@@ -54,10 +54,10 @@ function addPort(code) {
     });
 }
 
-function deletePort(code,name) {
+function delMyport(code,name) {
     $.ajax({
         type: 'POST',
-        url: '/api/deleteport',
+        url: '/api/myport-modify-del',
         headers: {'token': $.cookie('mytoken')},
         data: {'code': code,'name':name},
         success: function (response) {

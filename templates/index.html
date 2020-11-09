@@ -14,10 +14,12 @@
                 <input type="email" class="form-control" id="useremail" placeholder="아이디(이메일 주소)">
             </div>
             <div class="form-group">
-                <input type="number" class="form-control" id="noticeuprate" placeholder="등락률 숫자">
-                <input type="number" class="form-control" id="noticedownrate" placeholder="등락률 숫자">
+                <input type="number" class="form-control" id="notice_rate_up" placeholder="등락률 숫자">
+                <input type="number" class="form-control" id="notice_rate_down" placeholder="등락률 숫자">
             </div>
-            <button class="btn btn-primary" onclick="saveMyConfig()">수정</button>
+            <div class="flex_row">
+                <button class="btn btn-primary" onclick="saveMyConfig()">수정</button>
+            </div>
             <div class="add_layer_close_button" onclick="closeconfiglayer()">Close</div>
         </div>
         <div class="blank_width_50px"></div>

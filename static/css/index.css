@@ -45,3 +45,9 @@
     justify-content: space-around;
     align-items: center;
 }
+
+.flex_row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
