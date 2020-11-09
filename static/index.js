@@ -1,120 +1,114 @@
+$(document).ready(function () {
+    $('#myport_box').empty();
+    myconfigGet();
+    myportRefresh();
+});
 
-
-function valid_check1() {
+function myconfigModify() {
     $.ajax({
         type: "GET",
-        url: "/api/nick",
+        url: "/api/myconfig",
         headers: {'token': $.cookie('mytoken')},
         data: {},
         success: function (response) {
             if (response['result'] == 'success') {
-                console.log(response)
-                // 올바른 결과값을 받으면 nickname을 입력해줍니다.
-                $('#user_id').text(response['id'])
-                $('#button_signin').text("로그아웃")
-                document.getElementById("button_signin").style.display = 'inline'
-                document.getElementById("button_signup").style.display = 'none'
-                document.getElementById("welcome").style.display = 'none'
-                document.getElementById("mycontent").style.display = 'flex'
-                document.getElementById("myconfig").style.display = 'flex'
-
-
+                document.getElementById("useremail").placeholder = response['email'];
             } else {
-                // 에러가 나면 메시지를 띄우고 로그인 창으로 이동합니다.
-                alert(response['msg'])
-                //window.location.href = '/login'
-
-            }
+                let msg = response['msg'];
+                alert(msg);
+            };
         }
-    })
+    });
+    document.getElementById("configlayer").style.display = 'flex';
 }
 
-function myportPost() {
+function saveMyConfig() {
     $.ajax({
         type: "POST",
-        url: "/api/myport",
+        url: "/api/myconfig",
         headers: {'token': $.cookie('mytoken')},
         data: {},
         success: function (response) {
             if (response['result'] == 'success') {
-                console.log(response)
-                let ports = response['port']
-                for (let i = 0; i < ports.length; i++){
-                    let {port} = ports[i]
-                    let temphtml =`<tr>
-                                       <td>${port}</td>
-                                   </tr>`
-                    $('#port-box').append(temphtml);
-                }
-
-
+                document.getElementById("useremail").placeholder = response['email'];
             } else {
-                // 에러가 나면 메시지를 띄우고 로그인 창으로 이동합니다.
-                alert(response['msg'])
-                //window.location.href = '/login'
-
-            }
+                let msg = response['msg'];
+                alert(msg);
+            };
         }
-    })
+    });
+
+
 }
 
+function closeconfiglayer() {
+    document.getElementById("configlayer").style.display = 'none';
+}
 
-function myportGet() {
+function myconfigGet() {
     $.ajax({
         type: "GET",
-        url: "/api/myport",
+        url: "/api/myconfig",
         headers: {'token': $.cookie('mytoken')},
         data: {},
         success: function (response) {
             if (response['result'] == 'success') {
-                console.log(response)
-                let ports = response['port']
-                for (let i = 0; i < ports.length; i++){
-                    let {port} = ports[i]
-                    let temphtml =`<tr>
-                                       <td>${port}</td>
-                                   </tr>`
-                    $('#port-box').append(temphtml);
+                $('#user_id').text(response['payload']['id'])
+                if (response['payload']['notice_rate'] == "") {
+                    $('#notice_rate').text('우측 수정하기 버튼 클릭 후, 알람 조건을 설정해 주세요. 전일 대비 등락률이 설정값에 도달하면 이메일 알람이 발송됩니다.');
+                    document.getElementById("notice_rate").style.fontWeight = 'bolder';
+                    document.getElementById("notice_rate").style.color = 'khaki';
+                } else {
+                    $('#notice_rate').text(response['payload']['notice_rate']);
                 }
             } else {
-                // 에러가 나면 메시지를 띄우고 로그인 창으로 이동합니다.
-                alert(response['msg'])
-                $('#loading').text("등록 된 종목이 없습니다.")
-                //window.location.href = '/login'
-
-            }
+                //let msg = response['msg'];
+                //alert(msg);
+            };
         }
-    })
+    });
 }
 
-function myportPost() {
+function myportRefresh() {
+    $('#myport_box').empty();
+    let temphtml =`<tr>
+                       <th scope="col" id="loading" colspan="4">로딩중..</th>
+                   </tr>`
+    $('#myport_box').append(temphtml);
+
     $.ajax({
         type: "GET",
-        url: "/api/myport",
+        url: "/api/myport-refresh",
         headers: {'token': $.cookie('mytoken')},
         data: {},
         success: function (response) {
             if (response['result'] == 'success') {
-                console.log(response)
-                let ports = response['port']
+                let ports = response['ports_data']
+                $('#myport_box').empty();
                 for (let i = 0; i < ports.length; i++){
-                    let {port} = ports[i]
-                    let temphtml =`<tr>
-                                       <td>${port}</td>
-                                   </tr>`
-                    $('#port-box').append(temphtml);
+                    let {code, name, current_price, debi, rate, volume} = ports[i];
+                    temphtml =`<tr>
+                                   <td style="vertical-align: middle">${i+1}</td>
+                                   <td>${name}<br/>${code}</td>
+                                   <td>${current_price.toLocaleString()}<br/>${volume.toLocaleString()}</td>
+                                   <td>${debi.toLocaleString()}<br/>${rate}%</td>
+                               </tr>`;
+                    $('#myport_box').append(temphtml);
                 }
+            } else if(response['result'] == 'success_but') {
+                let msg = response['msg'];
+                let temphtml = `<tr>
+                                    <td colspan="4">${msg}</td>
+                                </tr>`;
+                $('#myport_box').append(temphtml);
             } else {
-                // 에러가 나면 메시지를 띄우고 로그인 창으로 이동합니다.
-                alert(response['msg'])
-                $('#loading').text("등록 된 종목이 없습니다.")
-                //window.location.href = '/login'
-
-            }
+                let msg = response['msg'];
+                alert(msg);
+            };
         }
-    })
+    });
 }
 
-function myport(){
-    window.location.href = '/myport'
+function myportModify(){
+    window.location.href = '/myport-modify';
 }

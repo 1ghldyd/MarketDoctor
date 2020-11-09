@@ -30,7 +30,7 @@ nav {
     flex-grow: 0;
 }
 
-#loginlayer {
+.add_layer {
     display: none;
     justify-content: center;
     align-content: stretch;
@@ -43,12 +43,12 @@ nav {
     background-color: rgba(0, 0, 0, 0.6);
 }
 
-#loginform {
+.add_layer_form {
     width: 300px;
     flex-grow:1;
 }
 
-#closeButton {
+.add_layer_close_button {
     padding: 15px;
     text-align: center;
 }

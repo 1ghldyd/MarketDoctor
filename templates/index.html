@@ -7,40 +7,54 @@
 
 {% block content %}
 <div>
+    <div class="add_layer" id="configlayer">
+        <div class="blank_width_50px"></div>
+        <div class="add_layer_form">
+            <div class="form-group">
+                <input type="email" class="form-control" id="useremail" placeholder="아이디(이메일 주소)">
+            </div>
+            <div class="form-group">
+                <input type="number" class="form-control" id="noticeuprate" placeholder="등락률 숫자">
+                <input type="number" class="form-control" id="noticedownrate" placeholder="등락률 숫자">
+            </div>
+            <button class="btn btn-primary" onclick="saveMyConfig()">수정</button>
+            <div class="add_layer_close_button" onclick="closeconfiglayer()">Close</div>
+        </div>
+        <div class="blank_width_50px"></div>
+    </div>
+
+
+
     <img id="mainimg" src="{{ url_for('static', filename = 'main.jpg') }}" alt=""/>
     <div id="welcome">
         <h1>로그인이 필요한 서비스입니다.</h1>
     </div>
     <div id="myconfig">
         <div>
-            <h5>E-mail : <span id="user_id"></span></h5>
-            <h6>알람 조건 : <span id="user_id"></span></h6>
+            <h5>E-mail 주소 : <span id="user_id"></span></h5>
+            <h6>E-mail 알람 조건 : <span id="notice_rate"></span></h6>
         </div>
-        <div>수정하기</div>
+        <div onclick="myconfigModify()">수정하기</div>
     </div>
     <div id="mycontent">
         <div class="info_box" id="myport">
-            <div id="myportReadButton" onclick="myport()">불러오기</div>
-            <div id="myportUpdateButton" onclick="myportPost()">수정하기</div>
-
-            <div class="reviews">
-                <table class="table myport_table">
-                    <thead>
-                    <tr>
-                        <th scope="col">종목</th>
-                        <th scope="col">주가</th>
-                        <th scope="col">변동률</th>
-                    </tr>
-                    </thead>
-                    <tbody id="port-box">
-                    <tr>
-                        <th scope="col"></th>
-                        <th scope="col" id="loading">로딩중..</th>
-                        <th scope="col"></th>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+            <div id="myportReadButton" onclick="myportRefresh()">갱신하기</div>
+            <div id="myportUpdateButton" onclick="myportModify()">수정하기</div>
+            <table class="table myport_table" style="text-align: center">
+                <thead>
+                <tr>
+                    <th scope="col" style="vertical-align: middle">번호</th>
+                    <th scope="col">종목명<br/>종목코드</th>
+                    <th scope="col">현재주가<br/>거래량</th>
+                    <th scope="col">전일비<br/>등락률</th>
+                </tr>
+                </thead>
+                <tbody id="myport_box">
+                <tr>
+                    <th scope="col" id="loading" colspan="4">로딩중..</th>
+                </tr>
+                </tbody>
+            </table>
         </div>
         <div class="info_box" id="mypage">내 정보</div>
     </div>

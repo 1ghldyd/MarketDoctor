@@ -1,6 +1,5 @@
 $(document).ready(function () {
-    // index.html 로드가 완료되면 자동으로 showStar() 함수를 호출합니다.
-    $('#port-box').empty();
+    $('#myport_box_modify').empty();
     showPort();
 });
 
@@ -12,9 +11,9 @@ function showPort() {
         data: {},
         success: function (response) {
             if (response['result'] == 'success') {
-                let ports = response['ports_info']
+                let ports = response['ports_data']
                 for (let i = 0; i < ports.length; i++){
-                    let {code, name} = ports[i]
+                    let {code, name} = ports[i];
                     let temphtml =`<tr>
                                        <td>${i+1}</td>
                                        <td>${code}</td>
@@ -22,15 +21,15 @@ function showPort() {
                                        <td><a href="#" onclick="deletePort('${code}','${name}')" class="card-footer-item has-text-danger">
                                            삭제<span class="icon"><i class="fas fa-ban"></i></span>
                                        </a></td>
-                                   </tr>`
-                    $('#port-box').append(temphtml);
+                                   </tr>`;
+                    $('#myport_box_modify').append(temphtml);
                 }
             } else if(response['result'] == 'success_but') {
-                let msg = response['msg']
+                let msg = response['msg'];
                 let temphtml = `<tr>
                                     <td colspan="4">${msg}</td>
-                                </tr>`
-                $('#port-box').append(temphtml);
+                                </tr>`;
+                $('#myport_box_modify').append(temphtml);
             } else {
                 let msg = response['msg'];
                 alert(msg);
@@ -55,7 +54,6 @@ function addPort(code) {
     });
 }
 
-
 function deletePort(code,name) {
     $.ajax({
         type: 'POST',
@@ -74,5 +72,5 @@ function deletePort(code,name) {
 }
 
 function backtothehome() {
-    window.location.href = '/'
+    window.location.href = '/';
 }

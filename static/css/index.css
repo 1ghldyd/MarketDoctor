@@ -29,10 +29,10 @@
 }
 
 .info_box {
-    width: 40%;
+    width: 30%;
     position: relative;
-    background-color: coral;
-
+    background-color: rgba(0, 0, 0, 0.2);
+    margin-top: 1%;
 }
 
 .myport_table {

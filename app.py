@@ -12,6 +12,14 @@ import bcrypt   # 암호화
 from functools import wraps
 import requests
 
+#import xmltodict # (패키지: xmltodict)
+#import json
+#import lxml
+import urllib.request
+from ast import literal_eval
+from urllib.request import HTTPError
+import xml.etree.ElementTree as ET
+
 app = Flask(__name__)
 
 client = MongoClient('localhost', 27017)
@@ -27,8 +35,8 @@ def home():
 def register():
    return render_template('register.html')
 
-@app.route('/myport')
-def myport_update():
+@app.route('/myport-modify')
+def myport_modify():
    return render_template('myport.html')
 
 
@@ -37,22 +45,23 @@ def api_register():
    id = request.form['id']
    pw = request.form['pw']
    pw_hash = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
-   db.user.insert_one({'id':id,'pw':pw_hash,'notice_rate':'','port':[]})
+   db.user.insert_one({'id':id,'pw':pw_hash,'email':id,'notice_rate':'','port':[]})
    return jsonify({'result': 'success', 'msg':'회원가입이 완료되었습니다.'})
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
    id = request.form['id']
    pw = request.form['pw']
-   user = db.user.find_one({'id': id},{'_id':False})
+   user_data = db.user.find_one({'id': id},{'_id':False})
 
-   if bcrypt.checkpw(pw.encode('utf-8'), user['pw']):
+   if bcrypt.checkpw(pw.encode('utf-8'), user_data['pw']):
       # JWT 토큰에는, payload와 시크릿키가 필요합니다.
       # 시크릿키가 있어야 토큰을 디코딩(=풀기) 해서 payload 값을 볼 수 있습니다.
       # 아래에선 id와 exp를 담았습니다. 즉, JWT 토큰을 풀면 유저ID 값을 알 수 있습니다.
       # exp에는 만료시간을 넣어줍니다. 만료시간이 지나면, 시크릿키로 토큰을 풀 때 만료되었다고 에러가 납니다.
       payload = {
          'id': id,
+         'notice_rate':user_data['notice_rate'],
          'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=60*60*24)   #24시간 유효
       }
       token = jwt.encode(payload, SECRET_KEY, algorithm='HS256').decode('utf-8')
@@ -72,6 +81,15 @@ def api_valid():
     else:
         return jsonify({'result': 'fail', 'msg': '토큰이 없습니다.'})
 
+@app.route('/api/myconfig', methods=['GET'])
+def api_myconfig():
+    payload = token_payload_read()
+    if payload is not None:
+        user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
+        return jsonify({'result': 'success', 'payload':{'id': user_data['id'], 'notice_rate': user_data['notice_rate']}})
+    else:
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
+
 def token_payload_read():
     access_token = request.headers.get('token')
     if access_token is not None:
@@ -83,14 +101,41 @@ def token_payload_read():
     else:
         return None
 
+@app.route('/api/myport-refresh', methods=['GET'])
+def myport_refresh():
+    payload = token_payload_read()
+    if payload is not None:
+        user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
+        ports_data = user_data['port']
+        if len(ports_data) != 0:
+            ports = []
+            for port in ports_data:
+                port_info = get_stock_cur(port['code'],1)
+                ports.append({'code':port['code'], 'name':port['name'], 'current_price':port_info['price'], 'debi':port_info['debi'], 'rate':port_info['rate'], 'volume':port_info['volume']})
+
+            return jsonify({'result': 'success', 'ports_data': ports})
+        else:
+            return jsonify({'result': 'success_but', 'msg': '등록된 종목이 없습니다.'})
+    else:
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
+
+@app.route('/api/myconfig', methods=['GET'])
+def myemail():
+    payload = token_payload_read()
+    if payload is not None:
+        user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
+        return jsonify({'result': 'success', 'email': user_data['email']})
+    else:
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
+
 @app.route('/api/myport', methods=['GET'])
 def myport():
     payload = token_payload_read()
     if payload is not None:
-        userinfo = db.user.find_one({'id': payload['id']}, {'_id': 0})
-        ports = userinfo['port']
+        user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
+        ports = user_data['port']
         if len(ports) != 0:
-            return jsonify({'result': 'success', 'ports_info': ports})
+            return jsonify({'result': 'success', 'ports_data': ports})
         else:
             return jsonify({'result': 'success_but', 'msg': '등록된 종목이 없습니다.'})
     else:
@@ -136,13 +181,61 @@ def get_stock(code):
 
     name = soup.select_one('title').text
     name = name[0:name.find(code)-1]
-    current_price = soup.select_one('#lastTick\[6\] > font.f3_r').text
-    rate = soup.select_one('#disArr\[0\] > span').text
+    #current_price = soup.select_one('#lastTick\[6\] > font.f3_r').text
+    #rate = soup.select_one('#disArr\[0\] > span').text
 
-    return ({'code':code, 'name':name, 'current_price':current_price, 'rate':rate})
+    #return ({'code':code, 'name':name, 'current_price':current_price, 'rate':rate})
+    return ({'code':code, 'name':name})
 
+'''
+def get_stock_cur(code,try_cnt):
+    try:
+        url = 'http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=' + code
+        req = urllib.request.urlopen(url)
+        result = req.read()
+        soup = BeautifulSoup(result, "lxml-xml")
 
+        xml_data = str(soup.find("TBL_StockInfo"))
+        xml_data = xml_data.replace('<TBL_StockInfo ', '{"')
+        xml_data = xml_data.replace('/>', '}')
+        xml_data = xml_data.replace('" ', '", "')
+        xml_data = xml_data.replace('=', '":')
+        xml_data = literal_eval(xml_data)
 
+        cur_juka = int(xml_data['CurJuka'].replace(',', ''))
+        prev_juka = int(xml_data['PrevJuka'].replace(',', ''))
+        debi = prev_juka-cur_juka
+        rate = round(((cur_juka / prev_juka)-1)*100,2)
+
+        return ({'price':cur_juka, 'debi':debi, 'rate':rate})
+    except HTTPError as e:
+        logging.warning(e)
+        if try_cnt>=3:
+            return None
+        else:
+            get_stock_cur(stock_code,try_cnt=+1)
+'''
+def get_stock_cur(code,try_cnt):
+    try:
+        temp = requests.get('http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=' + code).content
+        temp = temp[1:]
+        root = ET.fromstring(temp)
+        for type_tag in root.findall('TBL_StockInfo'):
+            cur_juka = int(type_tag.get('CurJuka').replace(',', ''))
+            prev_juka = int(type_tag.get('PrevJuka').replace(',', ''))
+            volume = int(type_tag.get('Volume').replace(',', ''))
+
+        debi = prev_juka-cur_juka
+        rate = round(((cur_juka / prev_juka)-1)*100,2)
+
+        return ({'price':cur_juka, 'debi':debi, 'rate':rate, 'volume':volume})
+
+    except HTTPError as e:
+        print(e)
+        if try_cnt>=3:
+            return None
+        else:
+            get_stock_cur(code,try_cnt=+1)
 
 
 def get_my_stock():
