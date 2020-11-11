@@ -138,7 +138,7 @@ def myport_info():
     payload = token_payload_read()
     if payload is not None:
         stock_data = get_stock_info(request.form['code'], 1)
-        chart(stock_data['stock_data'][0])
+        #chart(stock_data['stock_data'][0])
         return jsonify({'result': 'success', 'stock_data': stock_data})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})

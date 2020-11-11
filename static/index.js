@@ -138,7 +138,7 @@ function myportRefresh() {
                 $('#myport_box').empty();
                 for (let i = 0; i < ports.length; i++){
                     let {code, name, current_price, debi, rate, volume} = ports[i];
-                    temphtml =`<tr onclick="myportInfo('${code}')">
+                    temphtml =`<tr onclick="myportInfo('${code}','${name}')">
                                    <td style="vertical-align: middle">${i+1}</td>
                                    <td>${name}<br/>${code}</td>
                                    <td>${current_price.toLocaleString()}<br/>${volume.toLocaleString()}</td>
@@ -161,7 +161,7 @@ function myportRefresh() {
     });
 }
 
-function myportInfo(code) {
+function myportInfo(code,name) {
     $('#myport_info').empty();
     // let temphtml =`<tr>
     //                    <th scope="col" id="loading" colspan="4">로딩중..</th>
@@ -179,6 +179,8 @@ function myportInfo(code) {
                 console.log(stock_data)
                 $('#myport_info').empty();
                 let {Amount, CurJuka, Debi, DownJuka, DungRak, FaceJuka,High52,HighJuka,Low52,LowJuka,Per,PrevJuka,StartJuka,UpJuka,Volume} = stock_data['stock_data'][1]
+                let {mesuJan0, mesuHoka0, mesuJan1, mesuHoka1, mesuJan2, mesuHoka2, mesuJan3, mesuHoka3, mesuJan4, mesuHoka4,medoJan0,medoHoka0,medoJan1,medoHoka1,medoJan2,medoHoka2,medoJan3,medoHoka3,medoJan4,medoHoka4} = stock_data['stock_data'][2]
+                let {myNowTime, myJangGubun, kospiJisu,kospiBuho,kospiDebi,kosdaqJisu, kosdaqJisuBuho, kosdaqJisuDebi} = stock_data['stock_data'][3]
                 // temphtml =`<table class="table myport_table" style="text-align: center">
                 //                 <thead>
                 //                 <tr>
@@ -201,21 +203,163 @@ function myportInfo(code) {
                     //                <td>${current_price.toLocaleString()}<br/>${volume.toLocaleString()}</td>
                     //                <td>${debi.toLocaleString()}<br/>${rate}%</td>
                     //            </tr>`;
-                    temphtml =`Amount:${Amount}<br/>
-                                CurJuka:${CurJuka}<br/>
-                                Debi:${Debi}<br/>
-                                DownJuka:${DownJuka}<br/>
-                                DungRak:${DungRak}<br/>
-                                FaceJuka:${FaceJuka}<br/>
-                                High52:${High52}<br/>
-                                HighJuka:${HighJuka}<br/>
-                                Low52:${Low52}<br/>
-                                LowJuka:${LowJuka}<br/>
-                                Per:${Per}<br/>
-                                PrevJuka:${PrevJuka}<br/>
-                                StartJuka:${StartJuka}<br/>
-                                UpJuka:${UpJuka}<br/>
-                                Volume:${Volume}<br/></p>`
+                if (myJangGubun == 'OnMarket'){
+                    myJangGubun = '장중'
+                } else if (myJangGubun == 'Closed') {
+                    myJangGubun = '장마감'
+                }
+                if (DungRak == 2) {
+                    Debi = '+' + Debi
+                } else if (DungRak == 5) {
+                    Debi = '-' + Debi
+                }
+                if (kospiBuho == 2) {
+                    kospiDebi = '+' + kospiDebi
+                } else if (kospiBuho == 5) {
+                    kospiDebi = '-' + kospiDebi
+                }
+                if (kosdaqJisuBuho == 2) {
+                    kosdaqJisuDebi = '+' + kosdaqJisuDebi
+                    let kospiPerc = (((parseInt(kospiJisu)/parseInt(kospiJisu)-parseInt(kospiDebi)) - 1)*100).toFixed(2) + '%';
+                    console.log(kospiPerc)
+                } else if (kosdaqJisuBuho == 5) {
+                    kosdaqJisuDebi = '-' + kosdaqJisuDebi
+                    let kospiPerc = (((parseInt(kospiJisu)/parseInt(kospiJisu)+parseInt(kospiDebi)) - 1)*100).toFixed(2) + '%';
+                    console.log(kospiPerc)
+                }
+                CurJuka0 = parseInt(CurJuka.replace(",",""));
+                PrevJuka0 = parseInt(PrevJuka.replace(",",""));
+                //let debiPerc = (((CurJuka0/PrevJuka0) - 1)*100).toFixed(2) + '%';
+                let kosdaqPerc = (((CurJuka0/PrevJuka0) - 1)*100).toFixed(2) + '%';
+
+                    temphtml =`
+                                <table style="text-align: center">
+                                    <tbody>
+                                        <tr>
+                                            <th>${name} ( ${code} )</th>
+                                            <th>${myNowTime} ${myJangGubun}</th>
+                                        </tr>
+                                        <tr>
+                                            <th class="color_${DungRak}"><span class="big_font">${CurJuka}</span> ${Debi} (${debiPerc})</th>
+                                            <th>시가 ${StartJuka} / 고가 ${HighJuka} / 저가 ${LowJuka}</th>
+                                        </tr>
+                                        <tr>
+                                            <th></th>
+                                            <th>전일 ${PrevJuka} / 상한가 ${UpJuka} / 하한가 ${DownJuka}</th>
+                                        </tr>
+                                        <tr>
+                                            <th></th>
+                                            <th>거래량 ${Volume} / 52주 최고 ${High52} / 52주 최저 ${Low52}</th>
+                                        </tr>
+                                        <tr>
+                                            <th></th>
+                                            <th>주식수 ${Amount} / 액면가 ${FaceJuka} / Per ${Per}</th>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table style="text-align: center; display: none">
+                                    <thead>
+                                        <tr>
+                                            <th>매도잔량</th>
+                                            <th>매도호가</th>
+                                            <th>매수호가</th>
+                                            <th>매수잔량</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th>${medoJan0}</th>
+                                            <th>${medoHoka0}</th>
+                                            <th></th>
+                                            <th></th>
+                                        </tr>
+                                        <tr>
+                                            <th>${medoJan1}</th>
+                                            <th>${medoHoka1}</th>
+                                            <th></th>
+                                            <th></th>
+                                        </tr>
+                                        <tr>
+                                            <th>${medoJan2}</th>
+                                            <th>${medoHoka2}</th>
+                                            <th></th>
+                                            <th></th>
+                                        </tr>
+                                        <tr>
+                                            <th>${medoJan3}</th>
+                                            <th>${medoHoka3}</th>
+                                            <th></th>
+                                            <th></th>
+                                        </tr>
+                                        <tr>
+                                            <th>${medoJan4}</th>
+                                            <th>${medoHoka4}</th>
+                                            <th></th>
+                                            <th></th>
+                                        </tr>
+                                        <tr>
+                                            <th></th>
+                                            <th></th>
+                                            <th>${mesuHoka0}</th>
+                                            <th>${mesuJan0}</th>
+                                        </tr>
+                                        <tr>
+                                            <th></th>
+                                            <th></th>
+                                            <th>${mesuHoka1}</th>
+                                            <th>${mesuJan1}</th>
+                                        </tr>
+                                        <tr>
+                                            <th></th>
+                                            <th></th>
+                                            <th>${mesuHoka2}</th>
+                                            <th>${mesuJan2}</th>
+                                        </tr>
+                                        <tr>
+                                            <th></th>
+                                            <th></th>
+                                            <th>${mesuHoka3}</th>
+                                            <th>${mesuJan3}</th>
+                                        </tr>
+                                        <tr>
+                                            <th></th>
+                                            <th></th>
+                                            <th>${mesuHoka4}</th>
+                                            <th>${mesuJan4}</th>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div style="display: none">
+                                mesuJan0:${mesuJan0}<br/>
+                                mesuHoka0:${mesuHoka0}<br/>
+                                mesuJan1:${mesuJan1}<br/>
+                                mesuHoka1:${mesuHoka1}<br/>
+                                mesuJan2:${mesuJan2}<br/>
+                                mesuHoka2:${mesuHoka2}<br/>
+                                mesuJan3:${mesuJan3}<br/>
+                                mesuHoka3:${mesuHoka3}<br/>
+                                mesuJan4:${mesuJan4}<br/>
+                                mesuHoka4:${mesuHoka4}<br/>
+                                medoJan0:${medoJan0}<br/>
+                                medoHoka0:${medoHoka0}<br/>
+                                medoJan1:${medoJan1}<br/>
+                                medoHoka1:${medoHoka1}<br/>
+                                medoJan2:${medoJan2}<br/>
+                                medoHoka2:${medoHoka2}<br/>
+                                medoJan3:${medoJan3}<br/>
+                                medoHoka3:${medoHoka3}<br/>
+                                medoJan4:${medoJan4}<br/>
+                                medoHoka4:${medoHoka4}<br/>
+                                </div>
+                                <table style="text-align: center">
+                                    <tbody>
+                                        <tr>
+                                            <th>코스피 ${kospiJisu} ${kospiDebi} ${kospiPerc}</th>
+                                            <th>코스닥 ${kosdaqJisu} ${kosdaqJisuDebi} ${kosdaqPerc}</th>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                `
                     $('#myport_info').append(temphtml);
                 //}
             } else if(response['result'] == 'success_but') {

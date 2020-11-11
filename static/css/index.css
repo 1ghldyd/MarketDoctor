@@ -52,6 +52,9 @@
     flex-direction: column;
     justify-content: space-around;
     align-items: center;
+
+    flex-wrap:nowrap;
+    min-width: 500px;
 }
 
 .flex_row {
