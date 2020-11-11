@@ -29,7 +29,6 @@
 }
 
 .info_box {
-    width: 30%;
     position: relative;
     background-color: rgba(0, 0, 0, 0.2);
     margin-top: 1%;
@@ -40,6 +39,15 @@
 }
 
 #myport {
+    width: 35%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+}
+
+#myport_info {
+    width: 60%;
     display: flex;
     flex-direction: column;
     justify-content: space-around;

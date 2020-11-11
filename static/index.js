@@ -75,31 +75,44 @@ function saveMyConfig() {
         email = $('#useremail').val();
     };
     if ($('#notice_rate_up').val() == "") {
-        notice_rate_up = document.getElementById("notice_rate_up").placeholder;
+        if (Number.isInteger(document.getElementById("notice_rate_up").placeholder)) {
+            notice_rate_up = document.getElementById("notice_rate_up").placeholder;
+        } else {
+            notice_rate_up = ""
+        }
     } else {
         notice_rate_up = $('#notice_rate_up').val();
     };
     if ($('#notice_rate_down').val() == "") {
-        notice_rate_down = document.getElementById("notice_rate_down").placeholder;
+        if (Number.isInteger(document.getElementById("notice_rate_down").placeholder)) {
+            notice_rate_up = document.getElementById("notice_rate_down").placeholder;
+        } else {
+            notice_rate_down = ""
+        }
     } else {
         notice_rate_down = $('#notice_rate_down').val();
     };
-    $.ajax({
-        type: "POST",
-        url: "/api/myconfig",
-        headers: {'token': $.cookie('mytoken')},
-        data: {'email':email, 'notice_rate_up':notice_rate_up,'notice_rate_down':notice_rate_down},
-        success: function (response) {
-            if (response['result'] == 'success') {
-                let msg = response['msg'];
-                alert(msg);
-                closeconfiglayer();
-            } else {
-                let msg = response['msg'];
-                alert(msg);
-            };
-        }
-    });
+    if (email.indexOf('@') == -1 || email.indexOf('.') == -1) {
+        alert('아이디가 이메일 형식이 아닙니다.');
+    } else {
+        $.ajax({
+            type: "POST",
+            url: "/api/myconfig",
+            headers: {'token': $.cookie('mytoken')},
+            data: {'email':email, 'notice_rate_up':notice_rate_up,'notice_rate_down':notice_rate_down},
+            success: function (response) {
+                if (response['result'] == 'success') {
+                    let msg = response['msg'];
+                    alert(msg);
+                    closeconfiglayer();
+                    myconfigGet();
+                } else {
+                    let msg = response['msg'];
+                    alert(msg);
+                };
+            }
+        });
+    };
 }
 
 function closeconfiglayer() {
@@ -125,7 +138,7 @@ function myportRefresh() {
                 $('#myport_box').empty();
                 for (let i = 0; i < ports.length; i++){
                     let {code, name, current_price, debi, rate, volume} = ports[i];
-                    temphtml =`<tr>
+                    temphtml =`<tr onclick="myportInfo('${code}')">
                                    <td style="vertical-align: middle">${i+1}</td>
                                    <td>${name}<br/>${code}</td>
                                    <td>${current_price.toLocaleString()}<br/>${volume.toLocaleString()}</td>
@@ -140,6 +153,78 @@ function myportRefresh() {
                                     <td colspan="4">${msg}</td>
                                 </tr>`;
                 $('#myport_box').append(temphtml);
+            } else {
+                //let msg = response['msg'];
+                //alert(msg);
+            };
+        }
+    });
+}
+
+function myportInfo(code) {
+    $('#myport_info').empty();
+    // let temphtml =`<tr>
+    //                    <th scope="col" id="loading" colspan="4">로딩중..</th>
+    //                </tr>`
+    // $('#myport_box').append(temphtml);
+
+    $.ajax({
+        type: "POST",
+        url: "/api/myport-info",
+        headers: {'token': $.cookie('mytoken')},
+        data: {'code':code},
+        success: function (response) {
+            if (response['result'] == 'success') {
+                let stock_data = response['stock_data']
+                console.log(stock_data)
+                $('#myport_info').empty();
+                let {Amount, CurJuka, Debi, DownJuka, DungRak, FaceJuka,High52,HighJuka,Low52,LowJuka,Per,PrevJuka,StartJuka,UpJuka,Volume} = stock_data['stock_data'][1]
+                // temphtml =`<table class="table myport_table" style="text-align: center">
+                //                 <thead>
+                //                 <tr>
+                //                     <th scope="col" style="vertical-align: middle">번호</th>
+                //                     <th scope="col">종목명<br/>종목코드</th>
+                //                     <th scope="col">현재주가<br/>거래량</th>
+                //                     <th scope="col">전일비<br/>등락률</th>
+                //                 </tr>
+                //                 </thead>
+                //                 <tbody id="StockInfo_box">
+                //                 </tbody>
+                //            </table>`;
+                // $('#myport_info').append(temphtml);
+
+                //for (let i = 0; i < stock_data[1].length; i++){
+                    //let {Amount, CurJuka, Debi, DownJuka, DungRak, FaceJuka,High52,HighJuka,Low52,LowJuka,Per,PrevJuka,StartJuka,UpJuka,Volume} = ports[i];
+                    // temphtml =`<tr>
+                    //                <td style="vertical-align: middle">${i+1}</td>
+                    //                <td>${name}<br/>${code}</td>
+                    //                <td>${current_price.toLocaleString()}<br/>${volume.toLocaleString()}</td>
+                    //                <td>${debi.toLocaleString()}<br/>${rate}%</td>
+                    //            </tr>`;
+                    temphtml =`Amount:${Amount}<br/>
+                                CurJuka:${CurJuka}<br/>
+                                Debi:${Debi}<br/>
+                                DownJuka:${DownJuka}<br/>
+                                DungRak:${DungRak}<br/>
+                                FaceJuka:${FaceJuka}<br/>
+                                High52:${High52}<br/>
+                                HighJuka:${HighJuka}<br/>
+                                Low52:${Low52}<br/>
+                                LowJuka:${LowJuka}<br/>
+                                Per:${Per}<br/>
+                                PrevJuka:${PrevJuka}<br/>
+                                StartJuka:${StartJuka}<br/>
+                                UpJuka:${UpJuka}<br/>
+                                Volume:${Volume}<br/></p>`
+                    $('#myport_info').append(temphtml);
+                //}
+            } else if(response['result'] == 'success_but') {
+                let msg = response['msg'];
+                $('#myport_info').empty();
+                let temphtml = `<tr>
+                                    <td colspan="4">${msg}</td>
+                                </tr>`;
+                $('#myport_info').append(temphtml);
             } else {
                 //let msg = response['msg'];
                 //alert(msg);

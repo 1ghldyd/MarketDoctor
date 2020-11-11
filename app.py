@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import requests
 
 from selenium import webdriver
 import schedule
@@ -9,16 +10,17 @@ from pymongo import MongoClient
 import jwt      # (패키지: PyJWT)
 import datetime     # 토큰 만료시간
 import bcrypt   # 암호화
-from functools import wraps
-import requests
 
-#import xmltodict # (패키지: xmltodict)
-#import json
-#import lxml
-import urllib.request
-from ast import literal_eval
+from functools import wraps
+
 from urllib.request import HTTPError
 import xml.etree.ElementTree as ET
+
+from bokeh.plotting import figure, show, output_file
+from bokeh.layouts import gridplot
+from bokeh.models.formatters import NumeralTickFormatter
+from bokeh.embed import json_item
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -44,9 +46,12 @@ def myport_modify():
 def api_register():
    id = request.form['id']
    pw = request.form['pw']
-   pw_hash = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
-   db.user.insert_one({'id':id,'pw':pw_hash,'email':id,'notice_rate_up':'','notice_rate_down':'','port':[]})
-   return jsonify({'result': 'success', 'msg':'회원가입이 완료되었습니다.'})
+   if db.user.find_one({'id': id},{'_id':False}) is not None:
+       return jsonify({'result': 'fail', 'msg':'아이디가 중복되었습니다. 다시 입력 해 주세요.'})
+   else:
+       pw_hash = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
+       db.user.insert_one({'id':id,'pw':pw_hash,'email':id,'notice_rate_up':'','notice_rate_down':'','port':[]})
+       return jsonify({'result': 'success', 'msg':'회원가입이 완료되었습니다.'})
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
@@ -128,8 +133,71 @@ def myport_refresh():
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
-@app.route('/api/myport-modify', methods=['GET'])
+@app.route('/api/myport-info', methods=['POST'])
 def myport_info():
+    payload = token_payload_read()
+    if payload is not None:
+        stock_data = get_stock_info(request.form['code'], 1)
+        chart(stock_data['stock_data'][0])
+        return jsonify({'result': 'success', 'stock_data': stock_data})
+    else:
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
+
+def chart(data):
+    '''
+    x = [1,2,3,4,5]
+    y = [6,7,2,4,5]
+    output_file("lines.html")
+    p = figure(title="simple line example", x_axis_label="x", y_axis_label="y")
+    p.line(x,y,legend="Temp.",line_width=2)
+    show(p)
+    '''
+    df = pd.DataFrame(data, columns=['date','open','high','low','close','volume'])
+    #print(df)
+    inc = df.close >= df.open
+    dec = df.open > df.close
+
+    p_candlechart = figure(plot_width=400, plot_height=300, x_range=(-1, len(df)), tools=['crosshair, hover'])
+    p_candlechart.segment(df.index[inc], df.high[inc], df.index[inc], df.low[inc], color="red")
+    p_candlechart.segment(df.index[dec], df.high[dec], df.index[dec], df.low[dec], color="blue")
+    p_candlechart.vbar(df.index[inc], 0.9, df.open[inc], df.close[dec], fill_color="red", line_color="red")
+    p_candlechart.vbar(df.index[dec], 0.9, df.open[dec], df.close[dec], fill_color="blue", line_color="blue")
+    p_candlechart.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
+    p_candlechart.xaxis.ticker = [0,1,2,3,4,5,6,7,8,9]
+    p_candlechart.xaxis.visible = False
+
+    '''
+    p_candlechart.hover.tooltips=[
+        ("index", "$index"),
+        ("(x,y)", "($x, $y)"),
+        ("radius", "@radius"),
+        ("fill color", "$color[hex, swatch]:fill_color"),
+        ("foo", "@foo"),
+        ("bar", "@bar"),
+        ("date", "$date"),
+        ("open", "@open"),
+    ]
+    '''
+    p_volumechart = figure(plot_width=400, plot_height=100, x_range=p_candlechart.x_range, tools=['xpan, crosshair, xwheel_zoom, reset, hover, box_select, save'])
+    p_volumechart.vbar(df.index, 0.9, df.volume, fill_color="black", line_color="black")
+    major_label = {
+        i: date.strftime('%m/%d') for i, date in enumerate(pd.to_datetime(df["date"]))
+    }
+    major_label.update({len(df):''})
+    p_volumechart.xaxis.major_label_overrides = major_label
+    p_volumechart.xaxis.ticker = [0,1,2,3,4,5,6,7,8,9]
+    #p_volumechart.xaxis.major_label_orientation = 0.5
+    p_volumechart.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
+
+    p = gridplot([[p_candlechart], [p_volumechart]], toolbar_location=None)
+
+    output_file("lines.html")
+    show(p)
+    #jsonified_p = json_item(model=p, target="myplot")
+    #return json.dumps(jsonified_p, ensure_ascii=False, indent='\t')
+
+@app.route('/api/myport-modify', methods=['GET'])
+def myport_read():
     payload = token_payload_read()
     if payload is not None:
         user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
@@ -187,34 +255,6 @@ def get_stock(code):
     #return ({'code':code, 'name':name, 'current_price':current_price, 'rate':rate})
     return ({'code':code, 'name':name})
 
-'''
-def get_stock_cur(code,try_cnt):
-    try:
-        url = 'http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=' + code
-        req = urllib.request.urlopen(url)
-        result = req.read()
-        soup = BeautifulSoup(result, "lxml-xml")
-
-        xml_data = str(soup.find("TBL_StockInfo"))
-        xml_data = xml_data.replace('<TBL_StockInfo ', '{"')
-        xml_data = xml_data.replace('/>', '}')
-        xml_data = xml_data.replace('" ', '", "')
-        xml_data = xml_data.replace('=', '":')
-        xml_data = literal_eval(xml_data)
-
-        cur_juka = int(xml_data['CurJuka'].replace(',', ''))
-        prev_juka = int(xml_data['PrevJuka'].replace(',', ''))
-        debi = prev_juka-cur_juka
-        rate = round(((cur_juka / prev_juka)-1)*100,2)
-
-        return ({'price':cur_juka, 'debi':debi, 'rate':rate})
-    except HTTPError as e:
-        logging.warning(e)
-        if try_cnt>=3:
-            return None
-        else:
-            get_stock_cur(stock_code,try_cnt=+1)
-'''
 def get_stock_cur(code,try_cnt):
     try:
         temp = requests.get('http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=' + code).content
@@ -237,6 +277,92 @@ def get_stock_cur(code,try_cnt):
         else:
             get_stock_cur(code,try_cnt=+1)
 
+def get_stock_info(code,try_cnt):
+    try:
+        temp = requests.get('http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=' + code).content
+        temp = temp[1:]
+        root = ET.fromstring(temp)
+        stock_data = []
+        DailyStock = []
+        for DailyStock1 in root.findall('TBL_DailyStock'):
+            for DailyStock2 in DailyStock1.findall('DailyStock'):
+                #DailyStock.append(DailyStock2.attrib)
+                #date = DailyStock2.get('day_Date')
+                date = datetime.datetime.strptime(('20'+ DailyStock2.get('day_Date')).replace("/","-"),'%Y-%m-%d')
+                close = int(DailyStock2.get('day_EndPrice').replace(',', ''))
+                open = int(DailyStock2.get('day_Start').replace(',', ''))
+                high = int(DailyStock2.get('day_High').replace(',', ''))
+                low = int(DailyStock2.get('day_Low').replace(',', ''))
+                volume = int(DailyStock2.get('day_Volume').replace(',', ''))
+                DailyStock.append([date,open,high,low,close,volume])
+        DailyStock = list(reversed(DailyStock))
+
+        for TBL_StockInfo in root.findall('TBL_StockInfo'):
+            print(TBL_StockInfo.attrib)
+            '''
+            CurJuka = int(type_tag.get('CurJuka').replace(',', ''))
+            PrevJuka = int(type_tag.get('PrevJuka').replace(',', ''))
+            Volume = int(type_tag.get('Volume').replace(',', ''))
+            StartJuka = int(type_tag.get('StartJuka').replace(',', ''))
+            HighJuka = int(type_tag.get('HighJuka').replace(',', ''))
+            LowJuka = int(type_tag.get('LowJuka').replace(',', ''))
+            High52 = int(type_tag.get('High52').replace(',', ''))
+            Low52 = int(type_tag.get('Low52').replace(',', ''))
+            UpJuka = int(type_tag.get('UpJuka').replace(',', ''))
+            DownJuka = int(type_tag.get('DownJuka').replace(',', ''))
+            Per = float(type_tag.get('Per').replace(',', ''))
+            Amount = int(type_tag.get('Amount').replace(',', ''))
+            FaceJuka = int(type_tag.get('FaceJuka').replace(',', ''))
+            '''
+        for TBL_Hoga in root.findall('TBL_Hoga'):
+            print(TBL_Hoga.attrib)
+            '''
+            mesuJan0 = int(type_tag.get('mesuJan0').replace(',', ''))
+            mesuHoka0 = int(type_tag.get('mesuHoka0').replace(',', ''))
+            mesuJan1 = int(type_tag.get('mesuJan1').replace(',', ''))
+            mesuHoka1 = int(type_tag.get('mesuHoka1').replace(',', ''))
+            mesuJan2 = int(type_tag.get('mesuJan2').replace(',', ''))
+            mesuHoka2 = int(type_tag.get('mesuHoka2').replace(',', ''))
+            mesuJan3 = int(type_tag.get('mesuJan3').replace(',', ''))
+            mesuHoka3 = int(type_tag.get('mesuHoka3').replace(',', ''))
+            mesuJan4 = int(type_tag.get('mesuJan4').replace(',', ''))
+            mesuHoka4 = int(type_tag.get('mesuHoka4').replace(',', ''))
+            medoJan0 = int(type_tag.get('medoJan0').replace(',', ''))
+            medoHoka0 = int(type_tag.get('medoHoka0').replace(',', ''))
+            medoJan1 = int(type_tag.get('medoJan1').replace(',', ''))
+            medoHoka1 = int(type_tag.get('medoHoka1').replace(',', ''))
+            medoJan2 = int(type_tag.get('medoJan2').replace(',', ''))
+            medoHoka2 = int(type_tag.get('medoHoka2').replace(',', ''))
+            medoJan3 = int(type_tag.get('medoJan3').replace(',', ''))
+            medoHoka3 = int(type_tag.get('medoHoka3').replace(',', ''))
+            medoJan4 = int(type_tag.get('medoJan4').replace(',', ''))
+            medoHoka4 = int(type_tag.get('medoHoka4').replace(',', ''))
+            '''
+        for stockInfo in root.findall('stockInfo'):
+            print(stockInfo.attrib)
+            '''
+            myNowTime = type_tag.get('myNowTime')
+            myJangGubun = type_tag.get('myJangGubun')
+            kospiJisu = float(type_tag.get('kospiJisu'))
+            kospiBuho = int(type_tag.get('kospiBuho'))
+            kospiDebi = float(type_tag.get('kospiDebi'))
+            kosdaqJisu = float(type_tag.get('kosdaqJisu'))
+            kosdaqJisuBuho = int(type_tag.get('kosdaqJisuBuho'))
+            kosdaqJisuDebi = float(type_tag.get('kosdaqJisuDebi'))
+            '''
+        '''
+        debi = prev_juka-cur_juka
+        rate = round(((cur_juka / prev_juka)-1)*100,2)
+        return ({'price':cur_juka, 'debi':debi, 'rate':rate, 'volume':volume})
+        '''
+        stock_data = [DailyStock,TBL_StockInfo.attrib,TBL_Hoga.attrib,stockInfo.attrib]
+        return ({'stock_data':stock_data})
+    except HTTPError as e:
+        print(e)
+        if try_cnt>=3:
+            return None
+        else:
+            get_stock_cur(code,try_cnt=+1)
 
 def get_my_stock():
     ### option 적용 ###

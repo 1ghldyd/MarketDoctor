@@ -52,13 +52,20 @@ function login() {
         success: function (response) {
             if (response['result'] == 'success') {
                 $.cookie('mytoken', response['token']);
-                setTimeout(function() {valid_check();},100);
+                setTimeout(function() {logined();},100);
                 closeLoginLayer();
             } else {
                 alert(response['msg']);
             };
         }
     });
+}
+
+function logined() {
+    valid_check();
+    $('#myport_box').empty();
+    myconfigGet();
+    myportRefresh();
 }
 
 function logout() {

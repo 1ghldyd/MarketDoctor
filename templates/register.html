@@ -29,8 +29,13 @@
             // 간단한 회원가입 함수입니다.
             // 아이디, 비밀번호, 닉네임을 받아 DB에 저장합니다.
             function register() {
-                console.log($('#userid').val().indexOf('@') !== -1)
-                if ($('#userid').val().indexOf('@') !== -1 && $('#userid').val().indexOf('.') !== -1) {
+                if ($('#userid').val() == "") {
+                    alert('아이디(이메일)를 입력 해 주세요.');
+                } else if ($('#userpw').val() == "") {
+                    alert('비밀번호를 입력 해 주세요.');
+                } else if ($('#userpw_re').val() == "") {
+                    alert('비밀번호를 재입력 해 주세요.');
+                } else if ($('#userid').val().indexOf('@') == -1 || $('#userid').val().indexOf('.') == -1) {
                     alert('아이디가 이메일 형식이 아닙니다.');
                 } else if ($('#userpw').val() !== $('#userpw_re').val()) {
                     alert('비밀번호가 동일하지 않습니다.')
