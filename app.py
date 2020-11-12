@@ -20,6 +20,7 @@ from bokeh.plotting import figure, show, output_file
 from bokeh.layouts import gridplot
 from bokeh.models.formatters import NumeralTickFormatter
 from bokeh.embed import json_item
+import json
 import pandas as pd
 
 app = Flask(__name__)
@@ -31,7 +32,7 @@ SECRET_KEY = '!r1l1a1x2o2g3k3s3'        # JWT 토큰을 만들 때 필요한 비
 
 @app.route('/')
 def home():
-   return render_template('index.html')
+    return render_template('index.html')
 
 @app.route('/register')
 def register():
@@ -138,8 +139,8 @@ def myport_info():
     payload = token_payload_read()
     if payload is not None:
         stock_data = get_stock_info(request.form['code'], 1)
-        #chart(stock_data['stock_data'][0])
-        return jsonify({'result': 'success', 'stock_data': stock_data})
+        chart_data = chart(stock_data['stock_data'][0])
+        return jsonify({'result': 'success', 'stock_data': stock_data, 'chart_data':chart_data})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
@@ -157,7 +158,7 @@ def chart(data):
     inc = df.close >= df.open
     dec = df.open > df.close
 
-    p_candlechart = figure(plot_width=400, plot_height=300, x_range=(-1, len(df)), tools=['crosshair, hover'])
+    p_candlechart = figure(plot_width=500, plot_height=200, x_range=(-1, len(df)), tools=['crosshair, hover'])
     p_candlechart.segment(df.index[inc], df.high[inc], df.index[inc], df.low[inc], color="red")
     p_candlechart.segment(df.index[dec], df.high[dec], df.index[dec], df.low[dec], color="blue")
     p_candlechart.vbar(df.index[inc], 0.9, df.open[inc], df.close[dec], fill_color="red", line_color="red")
@@ -178,7 +179,7 @@ def chart(data):
         ("open", "@open"),
     ]
     '''
-    p_volumechart = figure(plot_width=400, plot_height=100, x_range=p_candlechart.x_range, tools=['xpan, crosshair, xwheel_zoom, reset, hover, box_select, save'])
+    p_volumechart = figure(plot_width=500, plot_height=100, x_range=p_candlechart.x_range, tools=['xpan, crosshair, xwheel_zoom, reset, hover, box_select, save'])
     p_volumechart.vbar(df.index, 0.9, df.volume, fill_color="black", line_color="black")
     major_label = {
         i: date.strftime('%m/%d') for i, date in enumerate(pd.to_datetime(df["date"]))
@@ -191,10 +192,15 @@ def chart(data):
 
     p = gridplot([[p_candlechart], [p_volumechart]], toolbar_location=None)
 
-    output_file("lines.html")
-    show(p)
+    #output_file("lines.html")
+    #show(p)
     #jsonified_p = json_item(model=p, target="myplot")
     #return json.dumps(jsonified_p, ensure_ascii=False, indent='\t')
+    jsonified_p = json_item(model=p, target="myplot")
+    return json.dumps(jsonified_p, ensure_ascii=False, indent='\t')
+    #script = Markup(script)
+    #div = Markup(div)
+    #return render_template('plot_template.html', plot1_script=script, plot1_div=div)
 
 @app.route('/api/myport-modify', methods=['GET'])
 def myport_read():

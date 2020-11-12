@@ -39,19 +39,23 @@ function showMyport() {
 }
 
 function addMyport(code) {
-    $.ajax({
-        type: 'POST',
-        url: '/api/myport-modify-add',
-        headers: {'token': $.cookie('mytoken')},
-        data: {'code': code},
-        success: function (response) {
-            if (response['result'] == 'success') {
-                let msg = response['msg'];
-                alert(msg);
-                window.location.reload();
+    if (code == "") {
+        alert('종목코드 6자리를 입력 해 주세요.')
+    } else {
+        $.ajax({
+            type: 'POST',
+            url: '/api/myport-modify-add',
+            headers: {'token': $.cookie('mytoken')},
+            data: {'code': code},
+            success: function (response) {
+                if (response['result'] == 'success') {
+                    let msg = response['msg'];
+                    alert(msg);
+                    window.location.reload();
+                }
             }
-        }
-    });
+        });
+    };
 }
 
 function delMyport(code,name) {

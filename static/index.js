@@ -176,7 +176,6 @@ function myportInfo(code,name) {
         success: function (response) {
             if (response['result'] == 'success') {
                 let stock_data = response['stock_data']
-                console.log(stock_data)
                 $('#myport_info').empty();
                 let {Amount, CurJuka, Debi, DownJuka, DungRak, FaceJuka,High52,HighJuka,Low52,LowJuka,Per,PrevJuka,StartJuka,UpJuka,Volume} = stock_data['stock_data'][1]
                 let {mesuJan0, mesuHoka0, mesuJan1, mesuHoka1, mesuJan2, mesuHoka2, mesuJan3, mesuHoka3, mesuJan4, mesuHoka4,medoJan0,medoHoka0,medoJan1,medoHoka1,medoJan2,medoHoka2,medoJan3,medoHoka3,medoJan4,medoHoka4} = stock_data['stock_data'][2]
@@ -213,155 +212,153 @@ function myportInfo(code,name) {
                 } else if (DungRak == 5) {
                     Debi = '-' + Debi
                 }
+                let kospiPerc, kosdaqPerc
                 if (kospiBuho == 2) {
+                    kospiPerc = ((Number(kospiJisu)/(Number(kospiJisu)-Number(kospiDebi)) - 1)*100).toFixed(2) + '%';
                     kospiDebi = '+' + kospiDebi
                 } else if (kospiBuho == 5) {
+                    kospiPerc = ((Number(kospiJisu)/(Number(kospiJisu)+Number(kospiDebi)) - 1)*100).toFixed(2) + '%';
                     kospiDebi = '-' + kospiDebi
                 }
                 if (kosdaqJisuBuho == 2) {
+                    kosdaqPerc = ((Number(kosdaqJisu)/(Number(kosdaqJisu)-Number(kosdaqJisuDebi)) - 1)*100).toFixed(2) + '%';
                     kosdaqJisuDebi = '+' + kosdaqJisuDebi
-                    let kospiPerc = (((parseInt(kospiJisu)/parseInt(kospiJisu)-parseInt(kospiDebi)) - 1)*100).toFixed(2) + '%';
-                    console.log(kospiPerc)
                 } else if (kosdaqJisuBuho == 5) {
+                    kosdaqPerc = ((Number(kosdaqJisu)/(Number(kosdaqJisu)+Number(kosdaqJisuDebi)) - 1)*100).toFixed(2) + '%';
                     kosdaqJisuDebi = '-' + kosdaqJisuDebi
-                    let kospiPerc = (((parseInt(kospiJisu)/parseInt(kospiJisu)+parseInt(kospiDebi)) - 1)*100).toFixed(2) + '%';
-                    console.log(kospiPerc)
                 }
                 CurJuka0 = parseInt(CurJuka.replace(",",""));
                 PrevJuka0 = parseInt(PrevJuka.replace(",",""));
-                //let debiPerc = (((CurJuka0/PrevJuka0) - 1)*100).toFixed(2) + '%';
-                let kosdaqPerc = (((CurJuka0/PrevJuka0) - 1)*100).toFixed(2) + '%';
+                let debiPerc = (((CurJuka0/PrevJuka0) - 1)*100).toFixed(2) + '%';
 
-                    temphtml =`
-                                <table style="text-align: center">
-                                    <tbody>
-                                        <tr>
-                                            <th>${name} ( ${code} )</th>
-                                            <th>${myNowTime} ${myJangGubun}</th>
-                                        </tr>
-                                        <tr>
-                                            <th class="color_${DungRak}"><span class="big_font">${CurJuka}</span> ${Debi} (${debiPerc})</th>
-                                            <th>시가 ${StartJuka} / 고가 ${HighJuka} / 저가 ${LowJuka}</th>
-                                        </tr>
-                                        <tr>
-                                            <th></th>
-                                            <th>전일 ${PrevJuka} / 상한가 ${UpJuka} / 하한가 ${DownJuka}</th>
-                                        </tr>
-                                        <tr>
-                                            <th></th>
-                                            <th>거래량 ${Volume} / 52주 최고 ${High52} / 52주 최저 ${Low52}</th>
-                                        </tr>
-                                        <tr>
-                                            <th></th>
-                                            <th>주식수 ${Amount} / 액면가 ${FaceJuka} / Per ${Per}</th>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                <table style="text-align: center; display: none">
-                                    <thead>
-                                        <tr>
-                                            <th>매도잔량</th>
-                                            <th>매도호가</th>
-                                            <th>매수호가</th>
-                                            <th>매수잔량</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <th>${medoJan0}</th>
-                                            <th>${medoHoka0}</th>
-                                            <th></th>
-                                            <th></th>
-                                        </tr>
-                                        <tr>
-                                            <th>${medoJan1}</th>
-                                            <th>${medoHoka1}</th>
-                                            <th></th>
-                                            <th></th>
-                                        </tr>
-                                        <tr>
-                                            <th>${medoJan2}</th>
-                                            <th>${medoHoka2}</th>
-                                            <th></th>
-                                            <th></th>
-                                        </tr>
-                                        <tr>
-                                            <th>${medoJan3}</th>
-                                            <th>${medoHoka3}</th>
-                                            <th></th>
-                                            <th></th>
-                                        </tr>
-                                        <tr>
-                                            <th>${medoJan4}</th>
-                                            <th>${medoHoka4}</th>
-                                            <th></th>
-                                            <th></th>
-                                        </tr>
-                                        <tr>
-                                            <th></th>
-                                            <th></th>
-                                            <th>${mesuHoka0}</th>
-                                            <th>${mesuJan0}</th>
-                                        </tr>
-                                        <tr>
-                                            <th></th>
-                                            <th></th>
-                                            <th>${mesuHoka1}</th>
-                                            <th>${mesuJan1}</th>
-                                        </tr>
-                                        <tr>
-                                            <th></th>
-                                            <th></th>
-                                            <th>${mesuHoka2}</th>
-                                            <th>${mesuJan2}</th>
-                                        </tr>
-                                        <tr>
-                                            <th></th>
-                                            <th></th>
-                                            <th>${mesuHoka3}</th>
-                                            <th>${mesuJan3}</th>
-                                        </tr>
-                                        <tr>
-                                            <th></th>
-                                            <th></th>
-                                            <th>${mesuHoka4}</th>
-                                            <th>${mesuJan4}</th>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                <div style="display: none">
-                                mesuJan0:${mesuJan0}<br/>
-                                mesuHoka0:${mesuHoka0}<br/>
-                                mesuJan1:${mesuJan1}<br/>
-                                mesuHoka1:${mesuHoka1}<br/>
-                                mesuJan2:${mesuJan2}<br/>
-                                mesuHoka2:${mesuHoka2}<br/>
-                                mesuJan3:${mesuJan3}<br/>
-                                mesuHoka3:${mesuHoka3}<br/>
-                                mesuJan4:${mesuJan4}<br/>
-                                mesuHoka4:${mesuHoka4}<br/>
-                                medoJan0:${medoJan0}<br/>
-                                medoHoka0:${medoHoka0}<br/>
-                                medoJan1:${medoJan1}<br/>
-                                medoHoka1:${medoHoka1}<br/>
-                                medoJan2:${medoJan2}<br/>
-                                medoHoka2:${medoHoka2}<br/>
-                                medoJan3:${medoJan3}<br/>
-                                medoHoka3:${medoHoka3}<br/>
-                                medoJan4:${medoJan4}<br/>
-                                medoHoka4:${medoHoka4}<br/>
-                                </div>
-                                <table style="text-align: center">
-                                    <tbody>
-                                        <tr>
-                                            <th>코스피 ${kospiJisu} ${kospiDebi} ${kospiPerc}</th>
-                                            <th>코스닥 ${kosdaqJisu} ${kosdaqJisuDebi} ${kosdaqPerc}</th>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                `
-                    $('#myport_info').append(temphtml);
-                //}
+                temphtml =`
+                            <table style="text-align: center">
+                                <tbody>
+                                    <tr style="text-align: center; border-bottom: 1px solid">
+                                        <th>${name} ( ${code} )</th>
+                                        <th>${myNowTime} ${myJangGubun}</th>
+                                    </tr>
+                                    <tr>
+                                        <th rowspan="2" class="color_${DungRak}"><span class="big_font">${CurJuka}</span> ${Debi} (${debiPerc})</th>
+                                        <th>시가 ${StartJuka} / 고가 ${HighJuka} / 저가 ${LowJuka}</th>
+                                    </tr>
+                                    <tr>
+                                        <th>전일 ${PrevJuka} / 상한가 ${UpJuka} / 하한가 ${DownJuka}</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2">거래량 ${Volume} / 52주 최고 ${High52} / 52주 최저 ${Low52} / 주식수 ${Amount} / 액면가 ${FaceJuka} / Per ${Per}</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <table style="text-align: center; display: none">
+                                <thead>
+                                    <tr>
+                                        <th>매도잔량</th>
+                                        <th>매도호가</th>
+                                        <th>매수호가</th>
+                                        <th>매수잔량</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th>${medoJan0}</th>
+                                        <th>${medoHoka0}</th>
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
+                                    <tr>
+                                        <th>${medoJan1}</th>
+                                        <th>${medoHoka1}</th>
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
+                                    <tr>
+                                        <th>${medoJan2}</th>
+                                        <th>${medoHoka2}</th>
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
+                                    <tr>
+                                        <th>${medoJan3}</th>
+                                        <th>${medoHoka3}</th>
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
+                                    <tr>
+                                        <th>${medoJan4}</th>
+                                        <th>${medoHoka4}</th>
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th>${mesuHoka0}</th>
+                                        <th>${mesuJan0}</th>
+                                    </tr>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th>${mesuHoka1}</th>
+                                        <th>${mesuJan1}</th>
+                                    </tr>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th>${mesuHoka2}</th>
+                                        <th>${mesuJan2}</th>
+                                    </tr>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th>${mesuHoka3}</th>
+                                        <th>${mesuJan3}</th>
+                                    </tr>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th>${mesuHoka4}</th>
+                                        <th>${mesuJan4}</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div style="display: none">
+                            mesuJan0:${mesuJan0}<br/>
+                            mesuHoka0:${mesuHoka0}<br/>
+                            mesuJan1:${mesuJan1}<br/>
+                            mesuHoka1:${mesuHoka1}<br/>
+                            mesuJan2:${mesuJan2}<br/>
+                            mesuHoka2:${mesuHoka2}<br/>
+                            mesuJan3:${mesuJan3}<br/>
+                            mesuHoka3:${mesuHoka3}<br/>
+                            mesuJan4:${mesuJan4}<br/>
+                            mesuHoka4:${mesuHoka4}<br/>
+                            medoJan0:${medoJan0}<br/>
+                            medoHoka0:${medoHoka0}<br/>
+                            medoJan1:${medoJan1}<br/>
+                            medoHoka1:${medoHoka1}<br/>
+                            medoJan2:${medoJan2}<br/>
+                            medoHoka2:${medoHoka2}<br/>
+                            medoJan3:${medoJan3}<br/>
+                            medoHoka3:${medoHoka3}<br/>
+                            medoJan4:${medoJan4}<br/>
+                            medoHoka4:${medoHoka4}<br/>
+                            </div>
+                            <div id="myplot"></div>
+                            <table style="text-align: center">
+                                <tbody>
+                                    <tr>
+                                        <th>코스피 ${kospiJisu} ${kospiDebi} ${kospiPerc}</th>
+                                        <th>코스닥 ${kosdaqJisu} ${kosdaqJisuDebi} ${kosdaqPerc}</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            `
+                $('#myport_info').append(temphtml);
+
+                let chart_data = response['chart_data']
+                item = JSON.parse(chart_data);
+                Bokeh.embed.embed_item(item, "myplot");
             } else if(response['result'] == 'success_but') {
                 let msg = response['msg'];
                 $('#myport_info').empty();
