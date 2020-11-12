@@ -16,16 +16,18 @@ from functools import wraps
 from urllib.request import HTTPError
 import xml.etree.ElementTree as ET
 
-from bokeh.plotting import figure, show, output_file
-import bokeh.plotting as bp
+from bokeh.plotting import figure
 from bokeh.layouts import gridplot
-from bokeh.models import NumeralTickFormatter,HoverTool,ColumnDataSource #.formatters
+from bokeh.models import NumeralTickFormatter,HoverTool,ColumnDataSource
 from bokeh.embed import json_item
-#from bokeh.models.tools import
 import json
 import pandas as pd
 
 from threading import Thread, Lock, Semaphore
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
 
@@ -163,7 +165,10 @@ def myport_refresh():
 def myport_info():
     payload = token_payload_read()
     if payload is not None:
+        start_time = time.time()
         stock_data = get_stock_info(request.form['code'], 1)
+        duration = time.time() - start_time
+        print(f"Downloaded in {duration} seconds")
         chart_data = chart(stock_data['stock_data'][0])
         return jsonify({'result': 'success', 'stock_data': stock_data, 'chart_data':chart_data})
     else:
@@ -179,55 +184,67 @@ def chart(data):
     show(p)
     '''
     df = pd.DataFrame(data, columns=['date','open','high','low','close','volume'])
-    df0 = bp.ColumnDataSource(df)
-    print(df0.data)
+    p_candlechart = figure(sizing_mode='scale_width', plot_height=150, x_range=(-1, len(df)), tools=['crosshair'])
+
     inc = df.close >= df.open
     dec = df.open > df.close
-    p_candlechart = figure(plot_width=500, plot_height=200, x_range=(-1, len(df)), tools=['hover,crosshair'])
-    p_candlechart.segment(df.index[inc], df.high[inc], df.index[inc], df.low[inc], color="red")
-    p_candlechart.segment(df.index[dec], df.high[dec], df.index[dec], df.low[dec], color="blue")
-    p_candlechart.vbar(df.index[inc], 0.9, df.open[inc], df.close[dec], fill_color="red", line_color="red")
-    p_candlechart.vbar(df.index[dec], 0.9, df.open[dec], df.close[dec], fill_color="blue", line_color="blue")
+    inc_source = ColumnDataSource(data=dict(
+        x1=df.index[inc],
+        top1=df.open[inc],
+        bottom1=df.close[inc],
+        high1=df.high[inc],
+        low1=df.low[inc],
+        volume1=df.volume[inc]
+    ))
+    dec_source = ColumnDataSource(data=dict(
+        x2=df.index[dec],
+        top2=df.open[dec],
+        bottom2=df.close[dec],
+        high2=df.high[dec],
+        low2=df.low[dec],
+        volume2=df.volume[dec]
+    ))
+    width = 0.8
+    p_candlechart.segment(x0='x1', y0='high1', x1='x1', y1='low1', source=inc_source, color="red")
+    p_candlechart.segment(x0='x2', y0='high2', x1='x2', y1='low2', source=dec_source, color="blue")
+    r1 = p_candlechart.vbar(x='x1', width=width, top='top1', bottom='bottom1', source=inc_source, fill_color="red", line_color="red")
+    r2 = p_candlechart.vbar(x='x2', width=width, top='top2', bottom='bottom2', source=dec_source, fill_color="blue", line_color="blue")
     p_candlechart.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
     p_candlechart.xaxis.ticker = [0,1,2,3,4,5,6,7,8,9]
     p_candlechart.xaxis.visible = False
-    hover = p_candlechart.select(dict(type=HoverTool))
-    hover.tooltips = [('when', '@open'), ('y', '$y')]
+    p_candlechart.add_tools(HoverTool(
+        renderers=[r1],
+        tooltips=[
+            ("Open", "@top1"),
+            ("High", "@high1"),
+            ("Low", "@low1"),
+            ("Close", "@bottom1")
+        ]))
+    p_candlechart.add_tools(HoverTool(
+        renderers=[r2],
+        tooltips=[
+            ("Open", "@top2"),
+            ("High", "@high2"),
+            ("Low", "@low2"),
+            ("Close", "@bottom2")
+        ]))
 
-    '''
-    p_candlechart.hover.tooltips=[
-        ("index", "$index"),
-        ("(x,y)", "($x, $y)"),
-        ("radius", "@radius"),
-        ("fill color", "$color[hex, swatch]:fill_color"),
-        ("foo", "@foo"),
-        ("bar", "@bar"),
-        ("date", "$date"),
-        ("open", "@open"),
-    ]
-    '''
-    p_volumechart = figure(plot_width=500, plot_height=100, x_range=p_candlechart.x_range, tools=['xpan, crosshair, xwheel_zoom, reset, hover, box_select, save'])
-    p_volumechart.vbar(df.index, 0.9, df.volume, fill_color="black", line_color="black")
-    major_label = {
+    p_volumechart = figure(sizing_mode='scale_width', plot_height=100, x_range=p_candlechart.x_range, tools=['crosshair'])
+    r3 = p_volumechart.vbar(x='x1', width=width, top='volume1', source=inc_source, fill_color="black", line_color="black")
+    r4 = p_volumechart.vbar(x='x2', width=width, top='volume2', source=dec_source, fill_color="black", line_color="black")
+    p_volumechart.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
+    p_volumechart.xaxis.ticker = [0,1,2,3,4,5,6,7,8,9]
+    p_volumechart.add_tools(HoverTool(renderers=[r3], tooltips=[("volume", "@volume1")]))
+    p_volumechart.add_tools(HoverTool(renderers=[r4], tooltips=[("volume", "@volume2")]))
+
+    p_volumechart.xaxis.major_label_overrides = {
         i: date.strftime('%m/%d') for i, date in enumerate(pd.to_datetime(df["date"]))
     }
-    major_label.update({len(df):''})
-    p_volumechart.xaxis.major_label_overrides = major_label
-    p_volumechart.xaxis.ticker = [0,1,2,3,4,5,6,7,8,9]
-    #p_volumechart.xaxis.major_label_orientation = 0.5
-    p_volumechart.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
 
     p = gridplot([[p_candlechart], [p_volumechart]], toolbar_location=None)
 
-    #output_file("lines.html")
-    #show(p)
-    #jsonified_p = json_item(model=p, target="myplot")
-    #return json.dumps(jsonified_p, ensure_ascii=False, indent='\t')
     jsonified_p = json_item(model=p, target="myplot")
     return json.dumps(jsonified_p, ensure_ascii=False, indent='\t')
-    #script = Markup(script)
-    #div = Markup(div)
-    #return render_template('plot_template.html', plot1_script=script, plot1_div=div)
 
 @app.route('/api/myport-modify', methods=['GET'])
 def myport_read():
@@ -337,58 +354,13 @@ def get_stock_info(code,try_cnt):
         DailyStock = list(reversed(DailyStock))
 
         for TBL_StockInfo in root.findall('TBL_StockInfo'):
-            print(TBL_StockInfo.attrib)
-            '''
-            CurJuka = int(type_tag.get('CurJuka').replace(',', ''))
-            PrevJuka = int(type_tag.get('PrevJuka').replace(',', ''))
-            Volume = int(type_tag.get('Volume').replace(',', ''))
-            StartJuka = int(type_tag.get('StartJuka').replace(',', ''))
-            HighJuka = int(type_tag.get('HighJuka').replace(',', ''))
-            LowJuka = int(type_tag.get('LowJuka').replace(',', ''))
-            High52 = int(type_tag.get('High52').replace(',', ''))
-            Low52 = int(type_tag.get('Low52').replace(',', ''))
-            UpJuka = int(type_tag.get('UpJuka').replace(',', ''))
-            DownJuka = int(type_tag.get('DownJuka').replace(',', ''))
-            Per = float(type_tag.get('Per').replace(',', ''))
-            Amount = int(type_tag.get('Amount').replace(',', ''))
-            FaceJuka = int(type_tag.get('FaceJuka').replace(',', ''))
-            '''
+            print(TBL_StockInfo.attrib) # {'JongName', 'CurJuka', 'DungRak', 'Debi', 'PrevJuka', 'Volume', 'Money', 'StartJuka', 'HighJuka', 'LowJuka', 'High52', 'Low52', 'UpJuka', 'DownJuka', 'Per', 'Amount', 'FaceJuka'}
+        '''
         for TBL_Hoga in root.findall('TBL_Hoga'):
-            print(TBL_Hoga.attrib)
-            '''
-            mesuJan0 = int(type_tag.get('mesuJan0').replace(',', ''))
-            mesuHoka0 = int(type_tag.get('mesuHoka0').replace(',', ''))
-            mesuJan1 = int(type_tag.get('mesuJan1').replace(',', ''))
-            mesuHoka1 = int(type_tag.get('mesuHoka1').replace(',', ''))
-            mesuJan2 = int(type_tag.get('mesuJan2').replace(',', ''))
-            mesuHoka2 = int(type_tag.get('mesuHoka2').replace(',', ''))
-            mesuJan3 = int(type_tag.get('mesuJan3').replace(',', ''))
-            mesuHoka3 = int(type_tag.get('mesuHoka3').replace(',', ''))
-            mesuJan4 = int(type_tag.get('mesuJan4').replace(',', ''))
-            mesuHoka4 = int(type_tag.get('mesuHoka4').replace(',', ''))
-            medoJan0 = int(type_tag.get('medoJan0').replace(',', ''))
-            medoHoka0 = int(type_tag.get('medoHoka0').replace(',', ''))
-            medoJan1 = int(type_tag.get('medoJan1').replace(',', ''))
-            medoHoka1 = int(type_tag.get('medoHoka1').replace(',', ''))
-            medoJan2 = int(type_tag.get('medoJan2').replace(',', ''))
-            medoHoka2 = int(type_tag.get('medoHoka2').replace(',', ''))
-            medoJan3 = int(type_tag.get('medoJan3').replace(',', ''))
-            medoHoka3 = int(type_tag.get('medoHoka3').replace(',', ''))
-            medoJan4 = int(type_tag.get('medoJan4').replace(',', ''))
-            medoHoka4 = int(type_tag.get('medoHoka4').replace(',', ''))
-            '''
+            print(TBL_Hoga.attrib) # {'mesuJan0', 'mesuHoka0', 'mesuJan1', 'mesuHoka1', 'mesuJan2', 'mesuHoka2', 'mesuJan3', 'mesuHoka3', 'mesuJan4', 'mesuHoka4', 'medoJan0', 'medoHoka0', 'medoJan1', 'medoHoka1', 'medoJan2', 'medoHoka2', 'medoJan3', 'medoHoka3', 'medoJan4', 'medoHoka4'}
+        '''
         for stockInfo in root.findall('stockInfo'):
-            print(stockInfo.attrib)
-            '''
-            myNowTime = type_tag.get('myNowTime')
-            myJangGubun = type_tag.get('myJangGubun')
-            kospiJisu = float(type_tag.get('kospiJisu'))
-            kospiBuho = int(type_tag.get('kospiBuho'))
-            kospiDebi = float(type_tag.get('kospiDebi'))
-            kosdaqJisu = float(type_tag.get('kosdaqJisu'))
-            kosdaqJisuBuho = int(type_tag.get('kosdaqJisuBuho'))
-            kosdaqJisuDebi = float(type_tag.get('kosdaqJisuDebi'))
-            '''
+            print(stockInfo.attrib) # {'kosdaqJisu', 'kosdaqJisuBuho', 'kosdaqJisuDebi', 'starJisu', 'starJisuBuho', 'starJisuDebi', 'jisu50', 'jisu50Buho', 'jisu50Debi', 'myNowTime', 'myJangGubun', 'myPublicPrice', 'krx100Jisu', 'krx100buho', 'krx100Debi', 'kospiJisu', 'kospiBuho', 'kospiDebi', 'kospi200Jisu', 'kospi200Buho', 'kospi200Debi'}
         '''
         debi = prev_juka-cur_juka
         rate = round(((cur_juka / prev_juka)-1)*100,2)
@@ -402,6 +374,47 @@ def get_stock_info(code,try_cnt):
             return None
         else:
             get_stock_info(code,try_cnt=+1)
+
+@app.route('/api/send_mail', methods=['POST'])
+def send_mail(): #stock_name,email
+    email = request.form['email']
+    print(email)
+    # 내 이메일 정보를 입력합니다.
+    me = "marketdoctor.notice@gmail.com"
+    # 내 비밀번호를 입력합니다.
+    my_password = "sgligoluramjhrrr"
+    # 이메일 받을 상대방의 주소를 입력합니다.
+    you = email
+
+    ## 여기서부터 코드를 작성하세요.
+    # 이메일 작성 form을 받아옵니다.
+    msg = MIMEMultipart('alternative')
+    # 제목을 입력합니다.
+    msg['Subject'] = "알림!"
+    # 송신자를 입력합니다.
+    msg['From'] = me
+    # 수신자를 입력합니다.
+    msg['To'] = you
+
+    # 이메일 내용을 작성합니다.
+    html = ' 주식을 한번 보세요!' #stock_name+
+    # 이메일 내용의 타입을 지정합니다.
+    part2 = MIMEText(html, 'html')
+    # 이메일 form에 작성 내용을 입력합니다
+    msg.attach(part2)
+    ## 여기에서 코드 작성이 끝납니다.
+
+    # Gmail을 통해 전달할 것임을 표시합니다.
+    s = smtplib.SMTP_SSL('smtp.gmail.com')
+    # 계정 정보를 이용해 로그인합니다.
+    s.login(me, my_password)
+    # 이메일을 발송합니다.
+    s.sendmail(me, you, msg.as_string())
+    # 이메일 보내기 프로그램을 종료합니다.
+    s.quit()
+
+    print('완료')
+    return jsonify({'result': 'success', 'msg': '메일이 발송되었습니다!'})
 
 def get_my_stock():
     ### option 적용 ###
@@ -450,7 +463,7 @@ def job():
     get_my_stock()
 
 def run():
-    schedule.every(15).seconds.do(job) #15초에 한번씩 실행
+    schedule.every(10).seconds.do(job) #15초에 한번씩 실행
     while True:
         schedule.run_pending()
 '''
@@ -460,28 +473,3 @@ if __name__ == "__main__":
 
 if __name__ == '__main__':
    app.run('0.0.0.0',port=5000,debug=True)
-''''''
-
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        access_token = request.headers.get('token')
-        if access_token is not None:
-            try:
-                payload = jwt.decode(access_token, SECRET_KEY, algorithms=['HS256'])
-            except jwt.InvalidTokenError:
-                payload = None
-
-            if payload is None:
-                return Response(status=401)
-
-            user_id = payload['id']
-            g.user_id = user_id
-            g.user = get_user_info(user_id) if user_id else None
-        else:
-            return Response(status=401)
-
-        return f(*args, **kwargs)
-
-    return decorated_function

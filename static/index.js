@@ -250,6 +250,36 @@ function myportInfo(code,name) {
                                     </tr>
                                 </tbody>
                             </table>
+                            <div id="myplot"></div>
+                            <table style="text-align: center">
+                                <tbody>
+                                    <tr>
+                                        <th>코스피 ${kospiJisu} ${kospiDebi} ${kospiPerc}</th>
+                                        <th>코스닥 ${kosdaqJisu} ${kosdaqJisuDebi} ${kosdaqPerc}</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            `
+                $('#myport_info').append(temphtml);
+
+                let chart_data = response['chart_data']
+                item = JSON.parse(chart_data);
+                Bokeh.embed.embed_item(item, "myplot");
+            } else if(response['result'] == 'success_but') {
+                let msg = response['msg'];
+                $('#myport_info').empty();
+                let temphtml = `<tr>
+                                    <td colspan="4">${msg}</td>
+                                </tr>`;
+                $('#myport_info').append(temphtml);
+            } else {
+                //let msg = response['msg'];
+                //alert(msg);
+            };
+        }
+    });
+}
+/*
                             <table style="text-align: center; display: none">
                                 <thead>
                                     <tr>
@@ -344,36 +374,24 @@ function myportInfo(code,name) {
                             medoJan4:${medoJan4}<br/>
                             medoHoka4:${medoHoka4}<br/>
                             </div>
-                            <div id="myplot"></div>
-                            <table style="text-align: center">
-                                <tbody>
-                                    <tr>
-                                        <th>코스피 ${kospiJisu} ${kospiDebi} ${kospiPerc}</th>
-                                        <th>코스닥 ${kosdaqJisu} ${kosdaqJisuDebi} ${kosdaqPerc}</th>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            `
-                $('#myport_info').append(temphtml);
-
-                let chart_data = response['chart_data']
-                item = JSON.parse(chart_data);
-                Bokeh.embed.embed_item(item, "myplot");
-            } else if(response['result'] == 'success_but') {
-                let msg = response['msg'];
-                $('#myport_info').empty();
-                let temphtml = `<tr>
-                                    <td colspan="4">${msg}</td>
-                                </tr>`;
-                $('#myport_info').append(temphtml);
-            } else {
-                //let msg = response['msg'];
-                //alert(msg);
-            };
-        }
-    });
-}
+*/
 
 function myportModify(){
     window.location.href = '/myport-modify';
+}
+
+function sendMail() {
+    $.ajax({
+        type: 'POST',
+        url: '/api/send_mail',
+        headers: {'token': $.cookie('mytoken')},
+        data: {'email': '1ghldyd@naver.com'},
+        success: function (response) {
+            if (response['result'] == 'success') {
+                let msg = response['msg'];
+                alert(msg);
+            }
+        }
+    });
+
 }
