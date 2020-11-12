@@ -17,11 +17,15 @@ from urllib.request import HTTPError
 import xml.etree.ElementTree as ET
 
 from bokeh.plotting import figure, show, output_file
+import bokeh.plotting as bp
 from bokeh.layouts import gridplot
-from bokeh.models.formatters import NumeralTickFormatter
+from bokeh.models import NumeralTickFormatter,HoverTool,ColumnDataSource #.formatters
 from bokeh.embed import json_item
+#from bokeh.models.tools import
 import json
 import pandas as pd
+
+from threading import Thread, Lock, Semaphore
 
 app = Flask(__name__)
 
@@ -29,6 +33,10 @@ client = MongoClient('localhost', 27017)
 db = client.marketdoctor
 
 SECRET_KEY = '!r1l1a1x2o2g3k3s3'        # JWT 토큰을 만들 때 필요한 비밀문자열입니다.
+
+get_stock_cur_data = []     # 멀티스레드용 전역함수
+get_stock_cur_data_lock = Lock()
+pool_sema = Semaphore(8)
 
 @app.route('/')
 def home():
@@ -123,12 +131,29 @@ def myport_refresh():
         user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
         ports_data = user_data['port']
         if len(ports_data) != 0:
+            '''
             ports = []
             for port in ports_data:
                 port_info = get_stock_cur(port['code'],1)
                 ports.append({'code':port['code'], 'name':port['name'], 'current_price':port_info['price'], 'debi':port_info['debi'], 'rate':port_info['rate'], 'volume':port_info['volume']})
-
             return jsonify({'result': 'success', 'ports_data': ports})
+            '''
+
+            global get_stock_cur_data
+            get_stock_cur_data = []
+            if get_stock_cur_data_lock.locked():
+                get_stock_cur_data_lock.release()
+
+            start_time = time.time()
+            ts = [Thread(target=get_stock_cur, args=(port_data,1), daemon=True)
+                  for port_data in ports_data]
+            for t in ts:
+                t.start()
+            for t in ts:
+                t.join()
+            duration = time.time() - start_time
+            print(f"Downloaded {len(ports_data)} in {duration} seconds")
+            return jsonify({'result': 'success', 'ports_data': get_stock_cur_data})
         else:
             return jsonify({'result': 'success_but', 'msg': '등록된 종목이 없습니다.'})
     else:
@@ -154,11 +179,11 @@ def chart(data):
     show(p)
     '''
     df = pd.DataFrame(data, columns=['date','open','high','low','close','volume'])
-    #print(df)
+    df0 = bp.ColumnDataSource(df)
+    print(df0.data)
     inc = df.close >= df.open
     dec = df.open > df.close
-
-    p_candlechart = figure(plot_width=500, plot_height=200, x_range=(-1, len(df)), tools=['crosshair, hover'])
+    p_candlechart = figure(plot_width=500, plot_height=200, x_range=(-1, len(df)), tools=['hover,crosshair'])
     p_candlechart.segment(df.index[inc], df.high[inc], df.index[inc], df.low[inc], color="red")
     p_candlechart.segment(df.index[dec], df.high[dec], df.index[dec], df.low[dec], color="blue")
     p_candlechart.vbar(df.index[inc], 0.9, df.open[inc], df.close[dec], fill_color="red", line_color="red")
@@ -166,6 +191,8 @@ def chart(data):
     p_candlechart.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
     p_candlechart.xaxis.ticker = [0,1,2,3,4,5,6,7,8,9]
     p_candlechart.xaxis.visible = False
+    hover = p_candlechart.select(dict(type=HoverTool))
+    hover.tooltips = [('when', '@open'), ('y', '$y')]
 
     '''
     p_candlechart.hover.tooltips=[
@@ -261,27 +288,33 @@ def get_stock(code):
     #return ({'code':code, 'name':name, 'current_price':current_price, 'rate':rate})
     return ({'code':code, 'name':name})
 
-def get_stock_cur(code,try_cnt):
-    try:
-        temp = requests.get('http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=' + code).content
-        temp = temp[1:]
-        root = ET.fromstring(temp)
-        for type_tag in root.findall('TBL_StockInfo'):
-            cur_juka = int(type_tag.get('CurJuka').replace(',', ''))
-            prev_juka = int(type_tag.get('PrevJuka').replace(',', ''))
-            volume = int(type_tag.get('Volume').replace(',', ''))
 
-        debi = prev_juka-cur_juka
-        rate = round(((cur_juka / prev_juka)-1)*100,2)
+def get_stock_cur(port_data,try_cnt):
+    with pool_sema:
+        try:
+            temp = requests.get('http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=' + port_data['code']).content
+            temp = temp[1:]
+            root = ET.fromstring(temp)
+            for type_tag in root.findall('TBL_StockInfo'):
+                cur_juka = int(type_tag.get('CurJuka').replace(',', ''))
+                prev_juka = int(type_tag.get('PrevJuka').replace(',', ''))
+                volume = int(type_tag.get('Volume').replace(',', ''))
 
-        return ({'price':cur_juka, 'debi':debi, 'rate':rate, 'volume':volume})
+            debi = prev_juka-cur_juka
+            rate = round(((cur_juka / prev_juka)-1)*100,2)
 
-    except HTTPError as e:
-        print(e)
-        if try_cnt>=3:
-            return None
-        else:
-            get_stock_cur(code,try_cnt=+1)
+            #return ({'price':cur_juka, 'debi':debi, 'rate':rate, 'volume':volume})
+
+            with get_stock_cur_data_lock:
+                global get_stock_cur_data
+                get_stock_cur_data.append({'code':port_data['code'], 'name':port_data['name'], 'current_price':cur_juka, 'debi':debi, 'rate':rate, 'volume':volume})
+
+        except HTTPError as e:
+            print(e)
+            if try_cnt>=3:
+                return None
+            else:
+                get_stock_cur(code,try_cnt=+1)
 
 def get_stock_info(code,try_cnt):
     try:
@@ -368,7 +401,7 @@ def get_stock_info(code,try_cnt):
         if try_cnt>=3:
             return None
         else:
-            get_stock_cur(code,try_cnt=+1)
+            get_stock_info(code,try_cnt=+1)
 
 def get_my_stock():
     ### option 적용 ###
