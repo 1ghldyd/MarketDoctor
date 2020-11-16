@@ -1,17 +1,17 @@
 from bs4 import BeautifulSoup
 import requests
 
-from selenium import webdriver
+#from selenium import webdriver
 import schedule
 import time
+from time import sleep
+from apscheduler.schedulers.background import BackgroundScheduler
 
-from flask import Flask, render_template, jsonify, request, session, redirect, url_for
+from flask import Flask, render_template, jsonify, request
 from pymongo import MongoClient
 import jwt      # (패키지: PyJWT)
-import datetime     # 토큰 만료시간
+from datetime import datetime, timedelta     # 토큰 만료시간
 import bcrypt   # 암호화
-
-from functools import wraps
 
 from urllib.request import HTTPError
 import xml.etree.ElementTree as ET
@@ -77,7 +77,7 @@ def api_login():
       # exp에는 만료시간을 넣어줍니다. 만료시간이 지나면, 시크릿키로 토큰을 풀 때 만료되었다고 에러가 납니다.
       payload = {
          'id': id,
-         'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=60*60*24)   #24시간 유효
+         'exp': datetime.utcnow() + timedelta(seconds=60*60*24)   #24시간 유효
       }
       token = jwt.encode(payload, SECRET_KEY, algorithm='HS256').decode('utf-8')
       return jsonify({'result': 'success','token':token})
@@ -110,7 +110,15 @@ def myconfig():
     payload = token_payload_read()
     if payload is not None:
         user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
-        db.user.update_one({'id': user_data['id']}, {'$set': {'email': request.form['email'], 'notice_rate_up': request.form['notice_rate_up'].replace('%', ''), 'notice_rate_down': request.form['notice_rate_down'].replace('%', '')}})
+        if (request.form['notice_rate_up'] == ""):
+            notice_rate_up = ""
+        else:
+            notice_rate_up = float(request.form['notice_rate_up'].replace('%', ''))
+        if (request.form['notice_rate_down'] == ""):
+            notice_rate_down = ""
+        else:
+            notice_rate_down = float(request.form['notice_rate_down'].replace('%', ''))
+        db.user.update_one({'id': user_data['id']}, {'$set': {'email': request.form['email'], 'notice_rate_up': notice_rate_up, 'notice_rate_down': notice_rate_down}})
         return jsonify({'result': 'success', 'msg': '설정이 저장되었습니다.'})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
@@ -141,10 +149,9 @@ def myport_refresh():
             return jsonify({'result': 'success', 'ports_data': ports})
             '''
 
-            global get_stock_cur_data
-            get_stock_cur_data = []
-            if get_stock_cur_data_lock.locked():
-                get_stock_cur_data_lock.release()
+            with get_stock_cur_data_lock:
+                global get_stock_cur_data
+                get_stock_cur_data = []
 
             start_time = time.time()
             ts = [Thread(target=get_stock_cur, args=(port_data,1), daemon=True)
@@ -154,7 +161,7 @@ def myport_refresh():
             for t in ts:
                 t.join()
             duration = time.time() - start_time
-            print(f"Downloaded {len(ports_data)} in {duration} seconds")
+            print(f"Downloaded current stock data {len(ports_data)} in {duration} seconds")
             return jsonify({'result': 'success', 'ports_data': get_stock_cur_data})
         else:
             return jsonify({'result': 'success_but', 'msg': '등록된 종목이 없습니다.'})
@@ -168,7 +175,7 @@ def myport_info():
         start_time = time.time()
         stock_data = get_stock_info(request.form['code'], 1)
         duration = time.time() - start_time
-        print(f"Downloaded in {duration} seconds")
+        print(f"Downloaded seleted current stock info in {duration} seconds")
         chart_data = chart(stock_data['stock_data'][0])
         return jsonify({'result': 'success', 'stock_data': stock_data, 'chart_data':chart_data})
     else:
@@ -270,8 +277,13 @@ def myport_add():
             return jsonify({'result': 'success', 'msg': '해당 종목은 이미 등록되어 있습니다!'})
         else:
             port_info = get_stock(add_code)
-            user_data['port'].append({'code': add_code, 'name': port_info['name']})
+            yesterday = (datetime.now() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            user_data['port'].append({'code': add_code, 'name': port_info['name'],'notice_date':yesterday})
             db.user.update_one({'id': user['id']}, {'$set': {'port': user_data['port']}})
+
+            if db.port.find_one({'code': add_code}, {'_id': 0}) is None:
+                db.port.insert_one({'code': add_code, 'name': port_info['name']})
+
             return jsonify({'result': 'success', 'msg': '종목이 추가되었습니다!'})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
@@ -280,11 +292,19 @@ def myport_add():
 def myport_del():
     user = token_payload_read()
     if user is not None:
-        user_data = db.user.find_one({'id': user['id']})
+        user_data = db.user.find_one({'id': user['id']},{'_id':False})
         delete_code = request.form['code']
         delete_name = request.form['name']
-        del user_data['port'][user_data['port'].index({'code': delete_code, 'name': delete_name})]
+
+        for index, sList in enumerate(user_data['port']):
+            if sList['code'] == delete_code and sList['name'] == delete_name :
+                del_index = index
+        del user_data['port'][del_index]
         db.user.update_one({'id': user['id']}, {'$set': {'port': user_data['port']}})
+
+        if db.user.find_one({'port.code': delete_code}, {'_id': 0}) is None:
+            db.port.delete_one({'code': delete_code})
+
         return jsonify({'result': 'success', 'msg': '종목이 삭제되었습니다!'})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
@@ -299,8 +319,6 @@ def get_stock(code):
 
     name = soup.select_one('title').text
     name = name[0:name.find(code)-1]
-    #current_price = soup.select_one('#lastTick\[6\] > font.f3_r').text
-    #rate = soup.select_one('#disArr\[0\] > span').text
 
     #return ({'code':code, 'name':name, 'current_price':current_price, 'rate':rate})
     return ({'code':code, 'name':name})
@@ -310,25 +328,32 @@ def get_stock_cur(port_data,try_cnt):
     with pool_sema:
         try:
             temp = requests.get('http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=' + port_data['code']).content
-            temp = temp[1:]
-            root = ET.fromstring(temp)
-            for type_tag in root.findall('TBL_StockInfo'):
-                cur_juka = int(type_tag.get('CurJuka').replace(',', ''))
-                prev_juka = int(type_tag.get('PrevJuka').replace(',', ''))
-                volume = int(type_tag.get('Volume').replace(',', ''))
+            if len(temp) != 0:
+                temp = temp[1:]
+                root = ET.fromstring(temp)
+                for type_tag in root.findall('TBL_StockInfo'):
+                    if type_tag.get('CurJuka') == "":
+                        return None
+                    cur_juka = int(type_tag.get('CurJuka').replace(',', ''))
+                    prev_juka = int(type_tag.get('PrevJuka').replace(',', ''))
+                    volume = int(type_tag.get('Volume').replace(',', ''))
+                    DungRak = type_tag.get('DungRak')
 
-            debi = prev_juka-cur_juka
-            rate = round(((cur_juka / prev_juka)-1)*100,2)
+                debi = cur_juka-prev_juka # 사실 javascript에서 구현해도 됨. (index.js : 308, debiPerc)
+                rate = round(((cur_juka / prev_juka)-1)*100,2)
 
-            #return ({'price':cur_juka, 'debi':debi, 'rate':rate, 'volume':volume})
+                for stockInfo in root.findall('stockInfo'):
+                    myJangGubun = stockInfo.get('myJangGubun')
+                    myNowTime = stockInfo.get('myNowTime')
 
-            with get_stock_cur_data_lock:
-                global get_stock_cur_data
-                get_stock_cur_data.append({'code':port_data['code'], 'name':port_data['name'], 'current_price':cur_juka, 'debi':debi, 'rate':rate, 'volume':volume})
+                with get_stock_cur_data_lock:
+                    global get_stock_cur_data
+                    get_stock_cur_data.append({'code':port_data['code'], 'name':port_data['name'], 'current_price':cur_juka, 'debi':debi, 'rate':rate, 'volume':volume, 'myJangGubun':myJangGubun, 'myNowTime':myNowTime, 'DungRak':DungRak})
 
         except HTTPError as e:
             print(e)
             if try_cnt>=3:
+                print('강제종료-네트워크 지연')
                 return None
             else:
                 get_stock_cur(code,try_cnt=+1)
@@ -338,13 +363,12 @@ def get_stock_info(code,try_cnt):
         temp = requests.get('http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=' + code).content
         temp = temp[1:]
         root = ET.fromstring(temp)
-        stock_data = []
         DailyStock = []
         for DailyStock1 in root.findall('TBL_DailyStock'):
             for DailyStock2 in DailyStock1.findall('DailyStock'):
                 #DailyStock.append(DailyStock2.attrib)
                 #date = DailyStock2.get('day_Date')
-                date = datetime.datetime.strptime(('20'+ DailyStock2.get('day_Date')).replace("/","-"),'%Y-%m-%d')
+                date = datetime.strptime(('20'+ DailyStock2.get('day_Date')).replace("/","-"),'%Y-%m-%d')
                 close = int(DailyStock2.get('day_EndPrice').replace(',', ''))
                 open = int(DailyStock2.get('day_Start').replace(',', ''))
                 high = int(DailyStock2.get('day_High').replace(',', ''))
@@ -354,19 +378,19 @@ def get_stock_info(code,try_cnt):
         DailyStock = list(reversed(DailyStock))
 
         for TBL_StockInfo in root.findall('TBL_StockInfo'):
-            print(TBL_StockInfo.attrib) # {'JongName', 'CurJuka', 'DungRak', 'Debi', 'PrevJuka', 'Volume', 'Money', 'StartJuka', 'HighJuka', 'LowJuka', 'High52', 'Low52', 'UpJuka', 'DownJuka', 'Per', 'Amount', 'FaceJuka'}
+            print('XML.TBL_StockInfo.attrib: ', TBL_StockInfo.attrib) # {'JongName', 'CurJuka', 'DungRak', 'Debi', 'PrevJuka', 'Volume', 'Money', 'StartJuka', 'HighJuka', 'LowJuka', 'High52', 'Low52', 'UpJuka', 'DownJuka', 'Per', 'Amount', 'FaceJuka'}
         '''
         for TBL_Hoga in root.findall('TBL_Hoga'):
             print(TBL_Hoga.attrib) # {'mesuJan0', 'mesuHoka0', 'mesuJan1', 'mesuHoka1', 'mesuJan2', 'mesuHoka2', 'mesuJan3', 'mesuHoka3', 'mesuJan4', 'mesuHoka4', 'medoJan0', 'medoHoka0', 'medoJan1', 'medoHoka1', 'medoJan2', 'medoHoka2', 'medoJan3', 'medoHoka3', 'medoJan4', 'medoHoka4'}
         '''
         for stockInfo in root.findall('stockInfo'):
-            print(stockInfo.attrib) # {'kosdaqJisu', 'kosdaqJisuBuho', 'kosdaqJisuDebi', 'starJisu', 'starJisuBuho', 'starJisuDebi', 'jisu50', 'jisu50Buho', 'jisu50Debi', 'myNowTime', 'myJangGubun', 'myPublicPrice', 'krx100Jisu', 'krx100buho', 'krx100Debi', 'kospiJisu', 'kospiBuho', 'kospiDebi', 'kospi200Jisu', 'kospi200Buho', 'kospi200Debi'}
+            print('XML.stockInfo.attrib: ', stockInfo.attrib) # {'kosdaqJisu', 'kosdaqJisuBuho', 'kosdaqJisuDebi', 'starJisu', 'starJisuBuho', 'starJisuDebi', 'jisu50', 'jisu50Buho', 'jisu50Debi', 'myNowTime', 'myJangGubun', 'myPublicPrice', 'krx100Jisu', 'krx100buho', 'krx100Debi', 'kospiJisu', 'kospiBuho', 'kospiDebi', 'kospi200Jisu', 'kospi200Buho', 'kospi200Debi'}
         '''
         debi = prev_juka-cur_juka
         rate = round(((cur_juka / prev_juka)-1)*100,2)
         return ({'price':cur_juka, 'debi':debi, 'rate':rate, 'volume':volume})
         '''
-        stock_data = [DailyStock,TBL_StockInfo.attrib,TBL_Hoga.attrib,stockInfo.attrib]
+        stock_data = [DailyStock,TBL_StockInfo.attrib,stockInfo.attrib] #TBL_Hoga.attrib,
         return ({'stock_data':stock_data})
     except HTTPError as e:
         print(e)
@@ -375,29 +399,112 @@ def get_stock_info(code,try_cnt):
         else:
             get_stock_info(code,try_cnt=+1)
 
-@app.route('/api/send_mail', methods=['POST'])
-def send_mail(): #stock_name,email
-    email = request.form['email']
-    print(email)
+def get_my_stock():
+    if db.port.find() is not None:
+        ports_data = list(db.port.find())
+        codes = []
+        for port_data in ports_data:
+            codes.append({'code': port_data['code'], 'name':port_data['name']})
+        with get_stock_cur_data_lock:
+            global get_stock_cur_data
+            get_stock_cur_data = []
+
+        start_time = time.time()
+        ts = [Thread(target=get_stock_cur, args=(code, 1), daemon=True)
+              for code in codes]
+        for t in ts:
+            t.start()
+        for t in ts:
+            t.join()
+        duration = time.time() - start_time
+        print(f"Downloaded current stock data {len(ports_data)} in {duration} seconds")
+
+        print(get_stock_cur_data)
+        if(len(get_stock_cur_data) != 0):
+            if(get_stock_cur_data[0]['myJangGubun'] == 'OnMarket'):
+                with get_stock_cur_data_lock:
+                    stock_datas = get_stock_cur_data[:]
+                target_lists = []
+                for stock_data in stock_datas:
+                    yesterday = (datetime.now() - timedelta(days=1)).replace(hour=15, minute=21, second=0, microsecond=0)
+                    if float(stock_data['rate']) > 0:
+                        targets = list(db.user.find({'port.code': stock_data['code'], 'port.notice_date': {'$lte': yesterday}, 'notice_rate_up': {'$lte': float(stock_data['rate'])}},{'_id': False, 'pw': False, 'port': False}))
+                        for target in targets:
+                            target_lists.append({'email': target['email'], 'code': stock_data['code'], 'name': stock_data['name'], 'notice_rate_direction':'up', 'notice_rate': target['notice_rate_up'], 'id':target['id'], 'current_price': stock_data['current_price'], 'debi': stock_data['debi'], 'rate': stock_data['rate'],'myNowTime': stock_data['myNowTime']})
+                    elif float(stock_data['rate']) < 0:
+                        targets = list(db.user.find({'port.code': stock_data['code'], 'port.notice_date': {'$lte': yesterday}, 'notice_rate_down': {'$gte': float(stock_data['rate'])}},{'_id': False, 'pw': False, 'port': False}))
+                        for target in targets:
+                            target_lists.append({'email': target['email'], 'code': stock_data['code'], 'name': stock_data['name'], 'notice_rate_direction':'down', 'notice_rate': target['notice_rate_down'], 'id':target['id'], 'current_price': stock_data['current_price'], 'debi': stock_data['debi'], 'rate': stock_data['rate'],'myNowTime': stock_data['myNowTime']})
+
+                target_lists_sort = []
+                for target_list in target_lists:
+                    target_lists_sort.append(target_list['id'])
+                target_lists_sort = list(set(target_lists_sort))
+                email_data = target_lists_sort[:]
+                i = 0
+                for id in target_lists_sort:
+                    email_data_stock_info = []
+                    for target_list in target_lists:
+                        if target_list['id'] == id:
+                            email_data_stock_info.append({'name':target_list['name'],'code':target_list['code'],'notice_rate_direction':target_list['notice_rate_direction'],'notice_rate':target_list['notice_rate'], 'current_price': stock_data['current_price'], 'debi': stock_data['debi'], 'rate': stock_data['rate']})
+                            email = target_list['email']
+                    email_data[i] = {'id':id,'email':email,'myNowTime': stock_data['myNowTime'],'stock_info':email_data_stock_info}
+                    i += 1
+                print(email_data)
+
+                start_time = time.time()
+                ts = [Thread(target=send_mail, args=(data,), daemon=True)
+                      for data in email_data]
+                for t in ts:
+                    t.start()
+                for t in ts:
+                    t.join()
+                duration = time.time() - start_time
+                print(f"Sended email in {duration} seconds")
+            else:
+                print(get_stock_cur_data[0]['myJangGubun'])
+        else:
+            print('len(get_stock_cur_data) : 0')
+
+def send_mail(data):
     # 내 이메일 정보를 입력합니다.
     me = "marketdoctor.notice@gmail.com"
     # 내 비밀번호를 입력합니다.
     my_password = "sgligoluramjhrrr"
+
+    #for data in email_data:
     # 이메일 받을 상대방의 주소를 입력합니다.
-    you = email
+    you = data['email']
+
+    with get_stock_cur_data_lock:
+        user_data = db.user.find_one({'id': data['id']}, {'_id': 0})
+    ports_data = user_data['port']
+    today = datetime.now()
+
+    sub_name = []
+    html_content = []
+    for for_data in data['stock_info']:
+        ret = int(next((index for (index, item) in enumerate(ports_data) if item['code'] == for_data['code']), None))
+        ports_data[ret]['notice_date'] = today
+        with get_stock_cur_data_lock:
+            db.user.update_one({'id': data['id']}, {'$set': {'port': ports_data}})
+        sub_name.append(for_data['name'] + " ")
+        html_content.append(for_data['name'] + "(" + for_data['code'] + ") 전일대비 " + str(for_data['notice_rate']) + "% 이상 " + for_data['notice_rate_direction'] + " - 현재가 : " + str(for_data['current_price']) + "(" + str(for_data['debi']) + " / " + str(for_data['rate']) + ")" + "<br/>")
+    sub_name = ''.join(sub_name)
+    html_content = ''.join(html_content)
 
     ## 여기서부터 코드를 작성하세요.
     # 이메일 작성 form을 받아옵니다.
     msg = MIMEMultipart('alternative')
     # 제목을 입력합니다.
-    msg['Subject'] = "알림!"
+    msg['Subject'] = "MarketDoctor 알림 : " + sub_name
     # 송신자를 입력합니다.
     msg['From'] = me
     # 수신자를 입력합니다.
     msg['To'] = you
-
     # 이메일 내용을 작성합니다.
-    html = ' 주식을 한번 보세요!' #stock_name+
+    html = 'MarketDoctor가 안내드립니다.<br/>알림 설정하신 종목을 확인하세요!<br/>* ' + data['myNowTime'] + ' 기준<br/><br/>' + html_content
+
     # 이메일 내용의 타입을 지정합니다.
     part2 = MIMEText(html, 'html')
     # 이메일 form에 작성 내용을 입력합니다
@@ -413,63 +520,57 @@ def send_mail(): #stock_name,email
     # 이메일 보내기 프로그램을 종료합니다.
     s.quit()
 
-    print('완료')
-    return jsonify({'result': 'success', 'msg': '메일이 발송되었습니다!'})
+    print(data['id'], '고객에게 메일 발송 완료')
 
-def get_my_stock():
-    ### option 적용 ###
-    options = webdriver.ChromeOptions()
-    options.add_argument('headless')
-    options.add_argument('window-size=1920x1080')
-    options.add_argument("disable-gpu")
-    options.add_argument(
-        "user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36")
+def run():
+    Thread(target=job_scheduled, daemon=True).start()
 
-    driver = webdriver.Chrome('chromedriver', options=options)
-    ##################
+def job_scheduled():
+    schedule.every(10).seconds.do(job) #10초에 한번씩 실행
 
-    # 삼성전자, 네이버, SK텔레콤, SK이노베이션, 카카오
-    codes = ['005930','035420','017670','096770','035720']
-
-    for code in codes:
-        # 네이버 주식페이지 url을 입력합니다.
-        url = 'https://m.stock.naver.com/item/main.nhn#/stocks/' + code + '/total'
-
-        # 크롬을 통해 네이버 주식페이지에 접속합니다.
-        driver.get(url)
-
-        # 정보를 받아오기까지 2초를 잠시 기다립니다.
-        time.sleep(1)
-
-        # 크롬에서 HTML 정보를 가져오고 BeautifulSoup을 통해 검색하기 쉽도록 가공합니다.
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-
-        name = soup.select_one(
-            '#header > div.end_header_topinfo > div.flick-container.major_info_wrp > div > div:nth-child(2) > div > div.item_wrp > div > h2').text
-
-        current_price = soup.select_one(
-            '#header > div.end_header_topinfo > div.flick-container.major_info_wrp > div > div:nth-child(2) > div > div.stock_wrp > div.price_wrp > strong').text
-
-        rate = soup.select_one('#header > div.end_header_topinfo > div.flick-container.major_info_wrp > div > div:nth-child(2) > div > div.stock_wrp > div.price_wrp > div > span.gap_rate > span.rate').text
-
-        print(name,current_price,rate)
-
-    print('-------')
-    # 크롬을 종료합니다.
-    driver.quit()
-    return myport
+    now = datetime.now()
+    time = now.replace(hour=15, minute=20, second=0, microsecond=0)
+    while now < time:
+        schedule.run_pending()
+        sleep(1)
+        now = datetime.now()
 
 def job():
     get_my_stock()
 
-def run():
-    schedule.every(10).seconds.do(job) #15초에 한번씩 실행
-    while True:
-        schedule.run_pending()
 '''
 if __name__ == "__main__":
-    run()
-'''
+    sched = BackgroundScheduler(daemon=True)
+    sched.start()
+    sched.add_job(run, 'cron', hour='9', minute='0', id="check_stock_send_email")
+    app.run('0.0.0.0',port=5000,debug=True)
 
+def find():
+    finded = list(db.user.find({'port.code':'035420', 'notice_rate_down':{'$lte':-5}}, {'_id': False, 'id':False, 'pw':False,'port':False}))
+    print(finded)
+
+def send():
+    today = datetime.datetime.now()
+    user_data = db.user.find_one({'id': 'test1@naver.com'}, {'_id': 0})
+    ports_data = user_data['port']
+    ret = int(next((index for (index, item) in enumerate(ports_data) if item['code'] == '207940'), None))
+    ports_data[ret]['notice_date'] = today
+    db.user.update_one({'id': 'test1@naver.com'}, {'$set': {'port': ports_data}})
+
+def time_calc():
+    #yesterday = datetime.now() - timedelta(days=1)
+    #print(yesterday)
+    #yesterday = (datetime.now() - timedelta(days=1)).replace(hour=15, minute=21, second=0, microsecond=0)
+    now = datetime.now()
+    time = now.replace(hour=21, minute=30, second=0, microsecond=0)
+    print(now < time)
+
+'''
 if __name__ == '__main__':
+   #find()
+   #send()
+   #time_calc()
+   #job_scheduled()
+   #get_my_stock()
+   #run()
    app.run('0.0.0.0',port=5000,debug=True)

@@ -1,8 +1,134 @@
 $(document).ready(function () {
+    if ($.cookie('mytoken') == undefined) {
+        document.getElementById("button_signin").style.display = 'inline';
+        document.getElementById("button_signup").style.display = 'inline';
+    } else {
+        valid_check();
+        $('#myport_box').empty();
+        myconfigGet();
+        myportRefresh();
+    };
+});
+
+function valid_check() {
+    $.ajax({
+        type: "GET",
+        url: "/api/valid",
+        headers: {'token': $.cookie('mytoken')},
+        data: {},
+        success: function (response) {
+            if (response['result'] == 'success') {
+                $('#button_signin').text("로그아웃");
+                document.getElementById("button_signin").style.display = 'inline';
+                document.getElementById("button_signup").style.display = 'none';
+                document.getElementById("welcome_text").style.display = 'none';
+                document.getElementById("myconfig").style.display = 'flex';
+                document.getElementById("mycontent").style.display = 'flex';
+            } else {
+                alert(response['msg']);
+            };
+        }
+    });
+}
+
+function loginButtonToggle(name) {
+    if (name == "로그인") {
+        openLoginLayer();
+    } else if (name == "로그아웃") {
+        logout();
+    }
+}
+
+function openLoginLayer() {
+
+    document.getElementById("loginlayer").style.display = 'flex';
+    document.getElementById("welcome_text").style.display = 'none';
+}
+
+function closeLoginLayer() {
+    document.getElementById("loginlayer").style.display = 'none';
+    document.getElementById("welcome_text").style.display = 'block';
+}
+
+function openRegisterLayer() {
+    document.getElementById("registerlayer").style.display = 'flex';
+    document.getElementById("welcome_text").style.display = 'none';
+}
+
+function closeRegisterLayer() {
+    document.getElementById("registerlayer").style.display = 'none';
+    document.getElementById("welcome_text").style.display = 'block';
+}
+
+function closeconfiglayer() {
+    document.getElementById("configlayer").style.display = 'none';
+}
+
+function openmyportLayer() {
+    showMyportRefresh();
+    document.getElementById("myportlayer").style.display = 'flex';
+}
+
+function closemyportlayer() {
+    document.getElementById("myportlayer").style.display = 'none';
+}
+
+function register() {
+    if ($('#register_userid').val() == "") {
+        alert('아이디(이메일)를 입력 해 주세요.');
+    } else if ($('#register_userpw').val() == "") {
+        alert('비밀번호를 입력 해 주세요.');
+    } else if ($('#register_userpw_re').val() == "") {
+        alert('비밀번호를 재입력 해 주세요.');
+    } else if ($('#register_userid').val().indexOf('@') == -1 || $('#register_userid').val().indexOf('.') == -1) {
+        alert('아이디가 이메일 형식이 아닙니다.');
+    } else if ($('#register_userpw').val() !== $('#register_userpw_re').val()) {
+        alert('비밀번호가 동일하지 않습니다.')
+    } else {
+        $.ajax({
+            type: "POST",
+            url: "/api/register",
+            data: {id: $('#register_userid').val(), pw: $('#register_userpw').val()},
+            success: function (response) {
+                if (response['result'] == 'success') {
+                    alert('회원가입이 완료되었습니다.')
+                    window.location.href = '/'
+                } else {
+                    alert(response['msg'])
+                }
+            }
+        })
+    }
+}
+
+function login() {
+    $.ajax({
+        type: "POST",
+        url: "/api/login",
+        data: {id: $('#userid').val(), pw: $('#userpw').val()},
+        success: function (response) {
+            if (response['result'] == 'success') {
+                $.cookie('mytoken', response['token']);
+                setTimeout(function() {logined();},100);
+                closeLoginLayer();
+            } else {
+                alert(response['msg']);
+            };
+        }
+    });
+}
+
+function logined() {
+    valid_check();
     $('#myport_box').empty();
     myconfigGet();
     myportRefresh();
-});
+}
+
+function logout() {
+    $.removeCookie('mytoken');
+    window.location.reload();
+}
 
 function myconfigGet() {
     $.ajax({
@@ -115,15 +241,10 @@ function saveMyConfig() {
     };
 }
 
-function closeconfiglayer() {
-    document.getElementById("configlayer").style.display = 'none';
-}
-
-
 function myportRefresh() {
     $('#myport_box').empty();
     let temphtml =`<tr>
-                       <th scope="col" id="loading" colspan="4">로딩중..</th>
+                       <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>주가 정보를 받아오고 있습니다...</th>
                    </tr>`
     $('#myport_box').append(temphtml);
 
@@ -137,12 +258,12 @@ function myportRefresh() {
                 let ports = response['ports_data']
                 $('#myport_box').empty();
                 for (let i = 0; i < ports.length; i++){
-                    let {code, name, current_price, debi, rate, volume} = ports[i];
+                    let {code, name, current_price, debi, rate, volume, DungRak} = ports[i];
                     temphtml =`<tr onclick="myportInfo('${code}','${name}')">
                                    <td style="vertical-align: middle">${i+1}</td>
                                    <td>${name}<br/>${code}</td>
-                                   <td>${current_price.toLocaleString()}<br/>${volume.toLocaleString()}</td>
-                                   <td>${debi.toLocaleString()}<br/>${rate}%</td>
+                                   <td><span class="font_color_${DungRak} font_weight">${current_price.toLocaleString()}</span><br/>${volume.toLocaleString()}</td>
+                                   <td class="font_color_${DungRak} font_weight">${debi.toLocaleString()}<br/>${rate}%</td>
                                </tr>`;
                     $('#myport_box').append(temphtml);
                 }
@@ -164,7 +285,7 @@ function myportRefresh() {
 function myportInfo(code,name) {
     $('#myport_info').empty();
     // let temphtml =`<tr>
-    //                    <th scope="col" id="loading" colspan="4">로딩중..</th>
+    //                    <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다...</th>
     //                </tr>`
     // $('#myport_box').append(temphtml);
 
@@ -178,8 +299,8 @@ function myportInfo(code,name) {
                 let stock_data = response['stock_data']
                 $('#myport_info').empty();
                 let {Amount, CurJuka, Debi, DownJuka, DungRak, FaceJuka,High52,HighJuka,Low52,LowJuka,Per,PrevJuka,StartJuka,UpJuka,Volume} = stock_data['stock_data'][1]
-                let {mesuJan0, mesuHoka0, mesuJan1, mesuHoka1, mesuJan2, mesuHoka2, mesuJan3, mesuHoka3, mesuJan4, mesuHoka4,medoJan0,medoHoka0,medoJan1,medoHoka1,medoJan2,medoHoka2,medoJan3,medoHoka3,medoJan4,medoHoka4} = stock_data['stock_data'][2]
-                let {myNowTime, myJangGubun, kospiJisu,kospiBuho,kospiDebi,kosdaqJisu, kosdaqJisuBuho, kosdaqJisuDebi} = stock_data['stock_data'][3]
+                //let {mesuJan0, mesuHoka0, mesuJan1, mesuHoka1, mesuJan2, mesuHoka2, mesuJan3, mesuHoka3, mesuJan4, mesuHoka4,medoJan0,medoHoka0,medoJan1,medoHoka1,medoJan2,medoHoka2,medoJan3,medoHoka3,medoJan4,medoHoka4} = stock_data['stock_data'][2]
+                let {myNowTime, myJangGubun, kospiJisu,kospiBuho,kospiDebi,kosdaqJisu, kosdaqJisuBuho, kosdaqJisuDebi} = stock_data['stock_data'][2]
                 // temphtml =`<table class="table myport_table" style="text-align: center">
                 //                 <thead>
                 //                 <tr>
@@ -234,12 +355,12 @@ function myportInfo(code,name) {
                 temphtml =`
                             <table style="text-align: center">
                                 <tbody>
-                                    <tr style="text-align: center; border-bottom: 1px solid">
-                                        <th>${name} ( ${code} )</th>
+                                    <tr style="border-bottom: 1px solid">
+                                        <th class="font_big">${name} ( ${code} )</th>
                                         <th>${myNowTime} ${myJangGubun}</th>
                                     </tr>
                                     <tr>
-                                        <th rowspan="2" class="color_${DungRak}"><span class="big_font">${CurJuka}</span> ${Debi} (${debiPerc})</th>
+                                        <th rowspan="2" class="font_color_${DungRak} font_big"><span class="big_font">${CurJuka}</span> ${Debi} (${debiPerc})</th>
                                         <th>시가 ${StartJuka} / 고가 ${HighJuka} / 저가 ${LowJuka}</th>
                                     </tr>
                                     <tr>
@@ -250,7 +371,9 @@ function myportInfo(code,name) {
                                     </tr>
                                 </tbody>
                             </table>
-                            <div id="myplot"></div>
+                            <div class="width_95perc">
+                                <div id="myplot"></div>
+                            </div>                            
                             <table style="text-align: center">
                                 <tbody>
                                     <tr>
@@ -376,20 +499,77 @@ function myportInfo(code,name) {
                             </div>
 */
 
-function myportModify(){
-    window.location.href = '/myport-modify';
+function showMyportRefresh() {
+    $('#myport_box_modify').empty();
+    showMyport();
+};
+
+function showMyport() {
+    $.ajax({
+        type: 'GET',
+        url: '/api/myport-modify',
+        headers: {'token': $.cookie('mytoken')},
+        data: {},
+        success: function (response) {
+            if (response['result'] == 'success') {
+                let ports = response['ports_data']
+                for (let i = 0; i < ports.length; i++){
+                    let {code, name} = ports[i];
+                    let temphtml =`<tr>
+                                       <td>${i+1}</td>
+                                       <td>${code}</td>
+                                       <td>${name}</td>
+                                       <td><a href="#" onclick="delMyport('${code}','${name}')" class="card-footer-item has-text-danger">
+                                           삭제<span class="icon"><i class="fas fa-ban"></i></span>
+                                       </a></td>
+                                   </tr>`;
+                    $('#myport_box_modify').append(temphtml);
+                }
+            } else if(response['result'] == 'success_but') {
+                let msg = response['msg'];
+                let temphtml = `<tr>
+                                    <td colspan="4">${msg}</td>
+                                </tr>`;
+                $('#myport_box_modify').append(temphtml);
+            } else {
+                let msg = response['msg'];
+                alert(msg);
+            }
+        }
+    });
 }
 
-function sendMail() {
+function addMyport(code) {
+    if (code == "") {
+        alert('종목코드 6자리를 입력 해 주세요.')
+    } else {
+        $.ajax({
+            type: 'POST',
+            url: '/api/myport-modify-add',
+            headers: {'token': $.cookie('mytoken')},
+            data: {'code': code},
+            success: function (response) {
+                if (response['result'] == 'success') {
+                    let msg = response['msg'];
+                    alert(msg);
+                    showMyportRefresh();
+                }
+            }
+        });
+    };
+}
+
+function delMyport(code,name) {
     $.ajax({
         type: 'POST',
-        url: '/api/send_mail',
+        url: '/api/myport-modify-del',
         headers: {'token': $.cookie('mytoken')},
-        data: {'email': '1ghldyd@naver.com'},
+        data: {'code': code,'name':name},
         success: function (response) {
             if (response['result'] == 'success') {
                 let msg = response['msg'];
                 alert(msg);
+                showMyportRefresh();
             }
         }
     });

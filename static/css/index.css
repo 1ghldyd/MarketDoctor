@@ -1,15 +1,59 @@
+body {
+    background-color: black;
+    color: azure;
+}
+
+nav {
+    padding-bottom: 2px;
+}
+
+#title {
+    font-size: 3rem;
+    margin-left: 2%;
+}
+
+#nav_buttonbox {
+    padding-left: 5px;
+    margin-left: 2%;
+    margin-right: 2%;
+}
+
+.blank_width_50px {
+    flex-grow:10;
+    width: 50px;
+}
+
+
+.add_layer {
+    display: none;
+    align-items: center;
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    top: 0px;
+    z-index: 999;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.add_layer_form {
+    width: 500px;
+}
+
+.add_layer_close_button {
+    padding: 15px;
+    text-align: center;
+}
+
 #mainimg {
     width: 100%;
     position: absolute;
     z-index: -1;
 }
 
-#welcome {
+#welcome_text {
     position: relative;
     padding: 20% 0px;
-    width: 100%;
     text-align: center;
-
 }
 
 #myconfig {
@@ -22,43 +66,77 @@
 
 #mycontent {
     display: none;
+    flex-wrap: wrap;
     justify-content: space-around;
     align-items: flex-start;
     height: 80vh;
     width: 100%;
+    padding: 1%;
 }
 
 .info_box {
-    position: relative;
     background-color: rgba(0, 0, 0, 0.2);
-    margin-top: 1%;
 }
 
-.myport_table {
-    width: 100%;
-}
-
-#myport {
+#myport_list {
     width: 35%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
+    min-width: 500px;
+    max-width: 600px;
+    height: calc(100vh - 100px);
     align-items: center;
+    overflow: auto;
 }
 
 #myport_info {
-    width: 60%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
+    width:60%;
+    min-width: 470px;
+    max-width: 1000px;
     align-items: center;
+}
 
-    flex-wrap:nowrap;
-    min-width: 500px;
+.float_center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.width_95perc {
+    width: 95%;
+}
+
+.min_width {
+    min-width: 47px;
 }
 
 .flex_row {
     display: flex;
     justify-content: space-around;
     align-items: center;
+}
+
+.flex_row_space_between {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flex_column {
+    display: flex;
+    flex-direction: column;
+}
+
+.font_color_2 {
+    color: red;
+}
+
+.font_color_5 {
+    color: blue;
+}
+
+.font_big {
+    font-size: 1.4rem;
+}
+
+.font_weight {
+    font-weight: bold;
 }
