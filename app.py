@@ -182,7 +182,7 @@ def chart(data):
     show(p)
     '''
     df = pd.DataFrame(data, columns=['date','open','high','low','close','volume'])
-    p_candlechart = figure(sizing_mode='scale_width', plot_height=150, x_range=(-1, len(df)), tools=['crosshair'])
+    p_candlechart = figure(sizing_mode='scale_width', plot_height=150, x_range=(-1, len(df)), tools=['crosshair'], y_axis_location="right")
 
     inc = df.close >= df.open
     dec = df.open > df.close
@@ -213,27 +213,27 @@ def chart(data):
     p_candlechart.add_tools(HoverTool(
         renderers=[r1],
         tooltips=[
-            ("Open", "@top1"),
-            ("High", "@high1"),
-            ("Low", "@low1"),
-            ("Close", "@bottom1")
+            ("시가", "@top1{0,0}"),
+            ("고가", "@high1{0,0}"),
+            ("저가", "@low1{0,0}"),
+            ("종가", "@bottom1{0,0}")
         ]))
     p_candlechart.add_tools(HoverTool(
         renderers=[r2],
         tooltips=[
-            ("Open", "@top2"),
-            ("High", "@high2"),
-            ("Low", "@low2"),
-            ("Close", "@bottom2")
+            ("시가", "@top2{0,0}"),
+            ("고가", "@high2{0,0}"),
+            ("저가", "@low2{0,0}"),
+            ("종가", "@bottom2{0,0}")
         ]))
 
-    p_volumechart = figure(sizing_mode='scale_width', plot_height=100, x_range=p_candlechart.x_range, tools=['crosshair'])
+    p_volumechart = figure(sizing_mode='scale_width', plot_height=100, x_range=p_candlechart.x_range, tools=['crosshair'], y_axis_location="right")
     r3 = p_volumechart.vbar(x='x1', width=width, top='volume1', source=inc_source, fill_color="black", line_color="black")
     r4 = p_volumechart.vbar(x='x2', width=width, top='volume2', source=dec_source, fill_color="black", line_color="black")
     p_volumechart.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
     p_volumechart.xaxis.ticker = [0,1,2,3,4,5,6,7,8,9]
-    p_volumechart.add_tools(HoverTool(renderers=[r3], tooltips=[("volume", "@volume1")]))
-    p_volumechart.add_tools(HoverTool(renderers=[r4], tooltips=[("volume", "@volume2")]))
+    p_volumechart.add_tools(HoverTool(renderers=[r3], tooltips=[("거래량", "@volume1{0,0}")]))
+    p_volumechart.add_tools(HoverTool(renderers=[r4], tooltips=[("거래량", "@volume2{0,0}")]))
 
     p_volumechart.xaxis.major_label_overrides = {
         i: date.strftime('%m/%d') for i, date in enumerate(pd.to_datetime(df["date"]))

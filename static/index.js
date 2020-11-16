@@ -251,7 +251,7 @@ function saveMyConfig() {
 function myportRefresh() {
     $('#myport_box').empty();
     let temphtml =`<tr>
-                       <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>주가 정보를 받아오고 있습니다...</th>
+                       <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>주가 정보를 받아오고 있습니다.<br/>등록 종목 갯수와 서버 상태에 따라 다소 지연 될 수 있습니다...</th>
                    </tr>`
     $('#myport_box').append(temphtml);
 
@@ -266,6 +266,10 @@ function myportRefresh() {
                 $('#myport_box').empty();
                 for (let i = 0; i < ports.length; i++){
                     let {code, name, current_price, debi, rate, volume, DungRak} = ports[i];
+                    if (DungRak == 2 || DungRak == 1) {
+                        debi = '+' + debi
+                        rate = '+' + rate
+                    }
                     temphtml =`<tr onclick="myportInfo('${code}','${name}')">
                                    <td style="vertical-align: middle">${i+1}</td>
                                    <td>${name}<br/>${code}</td>
@@ -307,7 +311,7 @@ function myportInfo(code,name) {
                 $('#myport_info').empty();
                 let {Amount, CurJuka, Debi, DownJuka, DungRak, FaceJuka,High52,HighJuka,Low52,LowJuka,Per,PrevJuka,StartJuka,UpJuka,Volume} = stock_data['stock_data'][1]
                 //let {mesuJan0, mesuHoka0, mesuJan1, mesuHoka1, mesuJan2, mesuHoka2, mesuJan3, mesuHoka3, mesuJan4, mesuHoka4,medoJan0,medoHoka0,medoJan1,medoHoka1,medoJan2,medoHoka2,medoJan3,medoHoka3,medoJan4,medoHoka4} = stock_data['stock_data'][2]
-                let {myNowTime, myJangGubun, kospiJisu,kospiBuho,kospiDebi,kosdaqJisu, kosdaqJisuBuho, kosdaqJisuDebi} = stock_data['stock_data'][2]
+                let {myNowTime, myJangGubun, kospiJisu,kospiBuho,kospiDebi,kosdaqJisu, kosdaqJisuBuho, kosdaqJisuDebi, kospi200Jisu, kospi200Buho, kospi200Debi} = stock_data['stock_data'][2]
                 // temphtml =`<table class="table myport_table" style="text-align: center">
                 //                 <thead>
                 //                 <tr>
@@ -335,35 +339,47 @@ function myportInfo(code,name) {
                 } else if (myJangGubun == 'Closed') {
                     myJangGubun = '장마감'
                 }
-                if (DungRak == 2) {
-                    Debi = '+' + Debi
-                } else if (DungRak == 5) {
-                    Debi = '-' + Debi
-                }
-                let kospiPerc, kosdaqPerc
-                if (kospiBuho == 2) {
-                    kospiPerc = ((Number(kospiJisu)/(Number(kospiJisu)-Number(kospiDebi)) - 1)*100).toFixed(2) + '%';
+                let kospiPerc, kosdaqPerc, kospi200Perc
+                if (kospiBuho == 1 || kospiBuho == 2) {
+                    kospiPerc = '+' + ((Number(kospiJisu)/(Number(kospiJisu)-Number(kospiDebi)) - 1)*100).toFixed(2) + '%';
                     kospiDebi = '+' + kospiDebi
-                } else if (kospiBuho == 5) {
+                } else if (kospiBuho == 4 || kospiBuho == 5) {
                     kospiPerc = ((Number(kospiJisu)/(Number(kospiJisu)+Number(kospiDebi)) - 1)*100).toFixed(2) + '%';
                     kospiDebi = '-' + kospiDebi
                 }
-                if (kosdaqJisuBuho == 2) {
-                    kosdaqPerc = ((Number(kosdaqJisu)/(Number(kosdaqJisu)-Number(kosdaqJisuDebi)) - 1)*100).toFixed(2) + '%';
+                if (kosdaqJisuBuho == 1 || kosdaqJisuBuho == 2) {
+                    kosdaqPerc = '+' + ((Number(kosdaqJisu)/(Number(kosdaqJisu)-Number(kosdaqJisuDebi)) - 1)*100).toFixed(2) + '%';
                     kosdaqJisuDebi = '+' + kosdaqJisuDebi
-                } else if (kosdaqJisuBuho == 5) {
+                } else if (kosdaqJisuBuho == 4 || kosdaqJisuBuho == 5) {
                     kosdaqPerc = ((Number(kosdaqJisu)/(Number(kosdaqJisu)+Number(kosdaqJisuDebi)) - 1)*100).toFixed(2) + '%';
                     kosdaqJisuDebi = '-' + kosdaqJisuDebi
                 }
+                if (kospi200Buho == 1 || kospi200Buho == 2) {
+                    kospi200Perc = '+' + ((Number(kospi200Jisu)/(Number(kospi200Jisu)-Number(kospi200Debi)) - 1)*100).toFixed(2) + '%';
+                    kospi200Debi = '+' + kospi200Debi
+                } else if (kospi200Buho == 4 || kospi200Buho == 5) {
+                    kospi200Perc = ((Number(kospi200Jisu)/(Number(kospi200Jisu)+Number(kospi200Debi)) - 1)*100).toFixed(2) + '%';
+                    kospi200Debi = '-' + kospi200Debi
+                }
                 CurJuka0 = parseInt(CurJuka.replace(",",""));
                 PrevJuka0 = parseInt(PrevJuka.replace(",",""));
-                let debiPerc = (((CurJuka0/PrevJuka0) - 1)*100).toFixed(2) + '%';
+                let debiPerc
+                if (DungRak == 1 || DungRak == 2) {
+                    Debi = '+' + Debi
+                    debiPerc = '+' + (((CurJuka0/PrevJuka0) - 1)*100).toFixed(2) + '%';
+                } else if (DungRak == 4 || DungRak == 5) {
+                    Debi = '-' + Debi
+                    debiPerc = (((CurJuka0/PrevJuka0) - 1)*100).toFixed(2) + '%';
+                } else if (DungRak == 3) {
+                    Debi = '0'
+                    debiPerc = '0.00%';
+                }
 
                 temphtml =`
                             <table class="width_95perc" style="text-align: center;">
                                 <tbody>
                                     <tr style="border-bottom: 1px solid">
-                                        <th class="font_big">${name} ( ${code} )</th>
+                                        <th class="font_big" style="padding: 10px 0px"><span>${name} </span><span style="display: inline-block">( ${code} )</span></th>
                                         <th>${myNowTime} ${myJangGubun}</th>
                                     </tr>
                                     <tr>
@@ -381,14 +397,11 @@ function myportInfo(code,name) {
                             <div class="width_95perc" style="padding-top: 5px">
                                 <div id="myplot"></div>
                             </div>                            
-                            <table class="width_95perc" style="text-align: center">
-                                <tbody>
-                                    <tr>
-                                        <th class="font_color_${kospiBuho} font_big">코스피 ${kospiJisu} ${kospiDebi} ${kospiPerc}</th>
-                                        <th class="font_color_${kosdaqJisuBuho} font_big">코스닥 ${kosdaqJisu} ${kosdaqJisuDebi} ${kosdaqPerc}</th>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="width_95perc" style="text-align: center">
+                                <span>KOSPI </span><span class="font_color_${kospiBuho} font_weight"> ${kospiJisu} ${kospiDebi} (${kospiPerc})</span><span> / </span>
+                                <span>KOSDAQ </span><span class="font_color_${kosdaqJisuBuho} font_weight">${kosdaqJisu} ${kosdaqJisuDebi} (${kosdaqPerc})</span><span> / </span>
+                                <span>KOSPI200 </span><span class="font_color_${kospi200Buho} font_weight">${kospi200Jisu} ${kospi200Debi} (${kospi200Perc})</span>
+                            </div>
                             `
                 $('#myport_info').append(temphtml);
 

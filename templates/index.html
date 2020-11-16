@@ -41,36 +41,35 @@
         </div>
     </nav>
 </header>
-<div>
-    <div class="add_layer" id="registerlayer">
-        <div class="blank_width_50px"></div>
-        <div class="add_layer_form">
-            <h1>회원가입</h1>
-            <div>
-                <div class="form-group">
-                    <label for="userid">ID</label>
-                    <input type="email" class="form-control" id="register_userid" aria-describedby="emailHelp" placeholder="My ID">
-                </div>
-                <div class="form-group">
-                    <label for="userpw">PW</label>
-                    <input type="password" class="form-control" id="register_userpw" placeholder="My Password">
-                </div>
-                <div class="form-group">
-                    <label for="userpw">PW 다시</label>
-                    <input type="password" class="form-control" id="register_userpw_re" placeholder="My Password 다시">
-                </div>
-                <div class="flex_row">
-                    <button class="btn btn-primary" onclick="register()">회원가입</button>
-                </div>
-                <div class="add_layer_close_button" onclick="closeRegisterLayer()">Close</div>
+<div class="add_layer" id="registerlayer">
+    <div class="blank_width_50px"></div>
+    <div class="add_layer_form">
+        <h1 style="text-align: center">회원가입</h1>
+        <div>
+            <div class="form-group">
+                <label for="userid">아이디</label>
+                <input type="email" class="form-control" id="register_userid" aria-describedby="emailHelp" placeholder="아이디는 이메일 주소를 사용해 주세요.">
             </div>
+            <div class="form-group">
+                <label for="userpw">비밀번호</label>
+                <input type="password" class="form-control" id="register_userpw" placeholder="8~16자 영문 대 소문자, 숫자, 특수문자를 사용하세요.">
+            </div>
+            <div class="form-group">
+                <label for="userpw">비밀번호 재확인</label>
+                <input type="password" class="form-control" id="register_userpw_re" placeholder="비밀번호를 다시 입력해 주세요.">
+            </div>
+            <div class="flex_row">
+                <button class="btn btn-primary btn-sm" onclick="register()">회원가입</button>
+            </div>
+            <div class="add_layer_close_button" onclick="closeRegisterLayer()">Close</div>
         </div>
-        <div class="blank_width_50px"></div>
     </div>
+    <div class="blank_width_50px"></div>
 </div>
 <div class="add_layer" id="loginlayer">
     <div class="blank_width_50px"></div>
     <div class="add_layer_form">
+            <h1 style="text-align: center; margin-bottom: 20px">로그인</h1>
         <div class="form-group">
             <!-- <label for="userid">ID</label> -->
             <input type="email" class="form-control" id="userid" aria-describedby="emailHelp"
@@ -81,7 +80,7 @@
             <input type="password" class="form-control" id="userpw" placeholder="비밀번호">
         </div>
         <div class="flex_row">
-            <button class="btn btn-primary" onclick="login()">로그인</button>
+            <button class="btn btn-primary btn-sm" onclick="login()">로그인</button>
         </div>
         <div class="add_layer_close_button" onclick="closeLoginLayer()">Close</div>
     </div>
@@ -99,14 +98,14 @@
             </div>
             <div>
                 <span>알림 기준 설정 : </span>
-                <input type="radio" name="chk_perc_or_price" value="perc">%
-                <input type="radio" name="chk_perc_or_price" value="price">금액
+                [<input type="radio" name="chk_perc_or_price" value="perc" style="margin: 3px 5px"> % ]
+                [<input type="radio" name="chk_perc_or_price" value="price" style="margin: 3px 5px"> 금액 ]
             </div>
             <div class="input-group mb-3">
                 <div class="input-group-prepend">
                     <span class="input-group-text" id="basic-addon1">상승 알림</span>
                 </div>
-                <input type="number" class="form-control" id="notice_rate_up">
+                <input type="number" class="form-control" id="notice_rate_up" title="% 또는 금액 기준의 설정 수치 이상으로 변 시 알림 메일이 발송됩니다.">
             </div>
             <div class="input-group mb-3">
                 <div class="input-group-prepend">
@@ -115,7 +114,7 @@
                 <input type="number" class="form-control" id="notice_rate_down">
             </div>
             <div class="flex_row">
-                <button class="btn btn-primary" onclick="saveMyConfig()">수정</button>
+                <button class="btn btn-primary btn-sm" onclick="saveMyConfig()">수정</button>
             </div>
             <div class="add_layer_close_button" onclick="closeconfiglayer()">Close</div>
         </div>
@@ -160,7 +159,9 @@
     </div>
 </div>
 <div>
+    <!--
     <img id="mainimg" src="{{ url_for('static', filename = 'main.jpg') }}" alt=""/>
+    -->
     <div id="welcome_text">
         <h1>로그인이 필요한 서비스입니다.</h1>
     </div>
@@ -169,15 +170,19 @@
             <h5>E-mail 주소 : <span id="user_id"></span></h5>
             <h6>E-mail 알람 조건 : <span id="notice_rate"></span></h6>
         </div>
+        <!--
         <div class="min_width" onclick="myconfigModify()">수정하기</div>
+        -->
+        <button type="button" class="btn btn-light btn-sm" onclick="myconfigModify()">수정하기</button>
     </div>
     <div id="mycontent">
         <div class="flex_column info_box" id="myport_list">
-            <div class="flex_row_space_between width_95perc">
-                <div id="myportReadButton" onclick="myportRefresh()">[ 새로고침 ]</div>
-                <div id="myportUpdateButton" onclick="openmyportLayer()">[ 종목 추가/수정 ]</div>
+            <div class="flex_row_space_between width_95perc padding_TB_10px">
+                <button type="button" class="btn btn-light btn-sm" id="myportUpdateButton" onclick="openmyportLayer()">종목 추가/수정</button>
+                <button type="button" class="btn btn-light btn-sm" id="myportReadButton" onclick="myportRefresh()">새로고침</button>
             </div>
-            <table class="table width_95perc float_center" style="text-align: center">
+            <div class="overflow width_95perc">
+            <table class="table float_center" style="text-align: center">
                 <thead>
                 <tr>
                     <th scope="col" style="vertical-align: middle">번호</th>
@@ -191,10 +196,13 @@
                     <th scope="col" id="loading" colspan="4">로딩중..</th>
                 </tr>
                 </tbody>
-            </table>
+            </table></div>
         </div>
         <div class="info_box flex_column" id="myport_info">종목 상세 정보</div>
     </div>
 </div>
+<footer>
+
+</footer>
 </body>
 </html>
