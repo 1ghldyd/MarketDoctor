@@ -62,6 +62,10 @@ function closeRegisterLayer() {
 
 function closeconfiglayer() {
     document.getElementById("configlayer").style.display = 'none';
+    $('#useremail').val("")
+    $('#notice_rate_up').val("")
+    $('#notice_rate_down').val("")
+    myconfigGet();
 }
 
 function openmyportLayer() {
@@ -71,6 +75,8 @@ function openmyportLayer() {
 
 function closemyportlayer() {
     document.getElementById("myportlayer").style.display = 'none';
+    $('#input_code').val("")
+    myportRefresh();
 }
 
 function register() {
@@ -175,15 +181,16 @@ function myconfigModify() {
         success: function (response) {
             if (response['result'] == 'success') {
                 document.getElementById("useremail").placeholder = response['payload']['email'];
+                console.log(response['payload'])
                 if (response['payload']['notice_rate_up'] !== "") {
                     document.getElementById("notice_rate_up").placeholder = response['payload']['notice_rate_up'];
                 } else {
-                    document.getElementById("notice_rate_up").placeholder = '이상값을 입력';
+                    document.getElementById("notice_rate_up").placeholder = '이상값을 입력(숫자만)';
                 };
                 if (response['payload']['notice_rate_up'] !== "") {
                     document.getElementById("notice_rate_down").placeholder = response['payload']['notice_rate_down'];
                 } else {
-                    document.getElementById("notice_rate_down").placeholder = '이하값을 입력';
+                    document.getElementById("notice_rate_down").placeholder = '이하값을 입력(숫자만)';
                 };
             } else {
                 let msg = response['msg'];
@@ -219,7 +226,7 @@ function saveMyConfig() {
         notice_rate_down = $('#notice_rate_down').val();
     };
     if (email.indexOf('@') == -1 || email.indexOf('.') == -1) {
-        alert('아이디가 이메일 형식이 아닙니다.');
+        alert('입력하신 이메일 주소가 잘 못 되었습니다.');
     } else {
         $.ajax({
             type: "POST",
@@ -353,7 +360,7 @@ function myportInfo(code,name) {
                 let debiPerc = (((CurJuka0/PrevJuka0) - 1)*100).toFixed(2) + '%';
 
                 temphtml =`
-                            <table style="text-align: center">
+                            <table class="width_95perc" style="text-align: center;">
                                 <tbody>
                                     <tr style="border-bottom: 1px solid">
                                         <th class="font_big">${name} ( ${code} )</th>
@@ -371,14 +378,14 @@ function myportInfo(code,name) {
                                     </tr>
                                 </tbody>
                             </table>
-                            <div class="width_95perc">
+                            <div class="width_95perc" style="padding-top: 5px">
                                 <div id="myplot"></div>
                             </div>                            
-                            <table style="text-align: center">
+                            <table class="width_95perc" style="text-align: center">
                                 <tbody>
                                     <tr>
-                                        <th>코스피 ${kospiJisu} ${kospiDebi} ${kospiPerc}</th>
-                                        <th>코스닥 ${kosdaqJisu} ${kosdaqJisuDebi} ${kosdaqPerc}</th>
+                                        <th class="font_color_${kospiBuho} font_big">코스피 ${kospiJisu} ${kospiDebi} ${kospiPerc}</th>
+                                        <th class="font_color_${kosdaqJisuBuho} font_big">코스닥 ${kosdaqJisu} ${kosdaqJisuDebi} ${kosdaqPerc}</th>
                                     </tr>
                                 </tbody>
                             </table>
@@ -540,9 +547,7 @@ function showMyport() {
 }
 
 function addMyport(code) {
-    if (code == "") {
-        alert('종목코드 6자리를 입력 해 주세요.')
-    } else {
+    if (code.length == 6 && $.isNumeric(code)) {
         $.ajax({
             type: 'POST',
             url: '/api/myport-modify-add',
@@ -552,10 +557,16 @@ function addMyport(code) {
                 if (response['result'] == 'success') {
                     let msg = response['msg'];
                     alert(msg);
+                    $('#input_code').val("")
                     showMyportRefresh();
+                } else if (response['result'] == 'fail') {
+                    let msg = response['msg'];
+                    alert(msg);
                 }
             }
         });
+    } else {
+        alert('종목 코드를 잘 못 입력했습니다. 6자리를 입력 해 주세요.')
     };
 }
 

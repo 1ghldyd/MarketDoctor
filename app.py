@@ -44,15 +44,6 @@ pool_sema = Semaphore(8)
 def home():
     return render_template('index.html')
 
-@app.route('/register')
-def register():
-   return render_template('register.html')
-
-@app.route('/myport-modify')
-def myport_modify():
-   return render_template('myport.html')
-
-
 @app.route('/api/register', methods=['POST'])
 def api_register():
    id = request.form['id']
@@ -61,7 +52,7 @@ def api_register():
        return jsonify({'result': 'fail', 'msg':'아이디가 중복되었습니다. 다시 입력 해 주세요.'})
    else:
        pw_hash = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
-       db.user.insert_one({'id':id,'pw':pw_hash,'email':id,'notice_rate_up':'','notice_rate_down':'','port':[]})
+       db.user.insert_one({'id':id,'pw':pw_hash,'email':id,'notice_rate_up':'','notice_rate_down':'','notice_price_up':'','notice_price_down':'','port':[]})
        return jsonify({'result': 'success', 'msg':'회원가입이 완료되었습니다.'})
 
 @app.route('/api/login', methods=['POST'])
@@ -277,14 +268,17 @@ def myport_add():
             return jsonify({'result': 'success', 'msg': '해당 종목은 이미 등록되어 있습니다!'})
         else:
             port_info = get_stock(add_code)
-            yesterday = (datetime.now() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-            user_data['port'].append({'code': add_code, 'name': port_info['name'],'notice_date':yesterday})
-            db.user.update_one({'id': user['id']}, {'$set': {'port': user_data['port']}})
+            if port_info['name'] == "":
+                return jsonify({'result': 'fail', 'msg': add_code + ' 종목이 조회되지 않습니다.'})
+            else:
+                yesterday = (datetime.now() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                user_data['port'].append({'code': add_code, 'name': port_info['name'],'notice_date':yesterday})
+                db.user.update_one({'id': user['id']}, {'$set': {'port': user_data['port']}})
 
-            if db.port.find_one({'code': add_code}, {'_id': 0}) is None:
-                db.port.insert_one({'code': add_code, 'name': port_info['name']})
+                if db.port.find_one({'code': add_code}, {'_id': 0}) is None:
+                    db.port.insert_one({'code': add_code, 'name': port_info['name']})
 
-            return jsonify({'result': 'success', 'msg': '종목이 추가되었습니다!'})
+                return jsonify({'result': 'success', 'msg': add_code + ' 종목이 추가되었습니다!'})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
@@ -319,7 +313,6 @@ def get_stock(code):
 
     name = soup.select_one('title').text
     name = name[0:name.find(code)-1]
-
     #return ({'code':code, 'name':name, 'current_price':current_price, 'rate':rate})
     return ({'code':code, 'name':name})
 

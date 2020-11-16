@@ -140,3 +140,7 @@ nav {
 .font_weight {
     font-weight: bold;
 }
+
+#myport_info th,tr {
+    padding: 5px;
+}
