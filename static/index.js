@@ -222,6 +222,9 @@ function saveMyConfig() {
         } else {
             notice_rate_down = "";
         }
+    } else if ($('#notice_rate_down').val() > 0) {
+        alert('하락 알림에는 음수(- 마이너스 숫자)만 입력해 주세요.');
+        return false;
     } else {
         notice_rate_down = $('#notice_rate_down').val();
     }
