@@ -31,7 +31,7 @@ from email.mime.text import MIMEText
 
 app = Flask(__name__)
 
-client = MongoClient('localhost', 27017)
+client = MongoClient('mongodb://test:test@localhost',27017)
 db = client.marketdoctor
 
 SECRET_KEY = '!r1l1a1x2o2g3k3s3'  # JWT 토큰을 만들 때 필요한 비밀문자열입니다.
