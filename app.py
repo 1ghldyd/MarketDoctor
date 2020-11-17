@@ -82,6 +82,7 @@ def api_login():
     else:
         return jsonify({'result': 'fail', 'msg': '아이디가 존재하지 않습니다.'})
 
+
 @app.route('/api/valid', methods=['GET'])
 def api_valid():
     access_token = request.headers.get('token')
@@ -154,7 +155,6 @@ def myport_refresh():
                 ports.append({'code':port['code'], 'name':port['name'], 'current_price':port_info['price'], 'debi':port_info['debi'], 'rate':port_info['rate'], 'volume':port_info['volume']})
             return jsonify({'result': 'success', 'ports_data': ports})
             '''
-
             with get_stock_cur_data_lock:
                 global get_stock_cur_data
                 get_stock_cur_data = []
@@ -201,7 +201,6 @@ def chart(data):
     df = pd.DataFrame(data, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
     p_candlechart = figure(sizing_mode='scale_width', plot_height=150, x_range=(-1, len(df)), tools=['crosshair'],
                            y_axis_location="right")
-
     inc = df.close >= df.open
     dec = df.open > df.close
     inc_source = ColumnDataSource(data=dict(
@@ -246,7 +245,6 @@ def chart(data):
             ("저가", "@low2{0,0}"),
             ("종가", "@bottom2{0,0}")
         ]))
-
     p_volumechart = figure(sizing_mode='scale_width', plot_height=100, x_range=p_candlechart.x_range,
                            tools=['crosshair'], y_axis_location="right")
     r3 = p_volumechart.vbar(x='x1', width=width, top='volume1', source=inc_source, fill_color="black",
@@ -257,11 +255,9 @@ def chart(data):
     p_volumechart.xaxis.ticker = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     p_volumechart.add_tools(HoverTool(renderers=[r3], tooltips=[("거래량", "@volume1{0,0}")]))
     p_volumechart.add_tools(HoverTool(renderers=[r4], tooltips=[("거래량", "@volume2{0,0}")]))
-
     p_volumechart.xaxis.major_label_overrides = {
         i: date.strftime('%m/%d') for i, date in enumerate(pd.to_datetime(df["date"]))
     }
-
     p = gridplot([[p_candlechart], [p_volumechart]], toolbar_location=None)
 
     jsonified_p = json_item(model=p, target="myplot")
