@@ -265,7 +265,7 @@ function myportRefresh() {
                 let ports = response['ports_data']
                 $('#myport_box').empty();
                 for (let i = 0; i < ports.length; i++){
-                    let {code, name, current_price, debi, rate, volume, DungRak} = ports[i];
+                    let {code, name, current_price, debi, rate, volume, DungRak,myNowTime} = ports[i];
                     if (DungRak == 2 || DungRak == 1) {
                         debi = '+' + debi
                         rate = '+' + rate
@@ -277,6 +277,8 @@ function myportRefresh() {
                                    <td class="font_color_${DungRak} font_weight">${debi.toLocaleString()}<br/>${rate}%</td>
                                </tr>`;
                     $('#myport_box').append(temphtml);
+                    $('#myNowTime').empty();
+                    $('#myNowTime').append(`${myNowTime} 기준`);
                 }
             } else if(response['result'] == 'success_but') {
                 let msg = response['msg'];
@@ -539,7 +541,7 @@ function showMyport() {
                                        <td>${i+1}</td>
                                        <td>${code}</td>
                                        <td>${name}</td>
-                                       <td><a href="#" onclick="delMyport('${code}','${name}')" class="card-footer-item has-text-danger">
+                                       <td><a href="#" onclick="delConfirm('${code}','${name}')" class="card-footer-item has-text-danger">
                                            삭제<span class="icon"><i class="fas fa-ban"></i></span>
                                        </a></td>
                                    </tr>`;
@@ -583,6 +585,13 @@ function addMyport(code) {
     };
 }
 
+function delConfirm(code,name) {
+    msg = name + '(' + code +') 종목을 삭제 하시겠습니까?';
+    if (confirm(msg)!=0) {
+        delMyport(code,name)
+    }
+}
+
 function delMyport(code,name) {
     $.ajax({
         type: 'POST',
@@ -591,8 +600,8 @@ function delMyport(code,name) {
         data: {'code': code,'name':name},
         success: function (response) {
             if (response['result'] == 'success') {
-                let msg = response['msg'];
-                alert(msg);
+                //let msg = response['msg'];
+                //alert(msg);
                 showMyportRefresh();
             }
         }

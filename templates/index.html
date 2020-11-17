@@ -69,7 +69,7 @@
 <div class="add_layer" id="loginlayer">
     <div class="blank_width_50px"></div>
     <div class="add_layer_form">
-            <h1 style="text-align: center; margin-bottom: 20px">로그인</h1>
+        <h1 style="text-align: center; margin-bottom: 20px">로그인</h1>
         <div class="form-group">
             <!-- <label for="userid">ID</label> -->
             <input type="email" class="form-control" id="userid" aria-describedby="emailHelp"
@@ -96,22 +96,23 @@
                 </div>
                 <input type="email" class="form-control" id="useremail" placeholder="아이디(이메일 주소)">
             </div>
-            <div>
-                <span>알림 기준 설정 : </span>
-                [<input type="radio" name="chk_perc_or_price" value="perc" style="margin: 3px 5px"> % ]
-                [<input type="radio" name="chk_perc_or_price" value="price" style="margin: 3px 5px"> 금액 ]
-            </div>
             <div class="input-group mb-3">
                 <div class="input-group-prepend">
                     <span class="input-group-text" id="basic-addon1">상승 알림</span>
                 </div>
                 <input type="number" class="form-control" id="notice_rate_up" title="% 또는 금액 기준의 설정 수치 이상으로 변 시 알림 메일이 발송됩니다.">
+                <div class="input-group-append">
+                    <span class="input-group-text">%</span>
+                </div>
             </div>
             <div class="input-group mb-3">
                 <div class="input-group-prepend">
                     <span class="input-group-text" id="basic-addon1">하락 알림</span>
                 </div>
                 <input type="number" class="form-control" id="notice_rate_down">
+                <div class="input-group-append">
+                    <span class="input-group-text">%</span>
+                </div>
             </div>
             <div class="flex_row">
                 <button class="btn btn-primary btn-sm" onclick="saveMyConfig()">수정</button>
@@ -124,8 +125,9 @@
 <div>
     <div class="add_layer" id="myportlayer">
         <div class="blank_width_50px"></div>
-        <div class="add_layer_form">
-            <div>
+        <div class="add_layer_form flex_column height_100vh">
+            <h1 class="margin_T_20perc" style="text-align: center; margin-bottom: 20px">종목 추가 수정</h1>
+            <div class="height overflow">
                 <table class="table myport_table" style="text-align: center">
                     <thead>
                     <tr>
@@ -144,13 +146,11 @@
                     </tr>
                     </tbody>
                 </table>
-                <div>
-                    <div class="input-group mb-3">
-                        <input id="input_code" class="form-control" placeholder="종목 코드 입력">
-                        <div class="input-group-append">
-                        <button type="button" class="btn btn-primary btn-sm" onclick="addMyport($('#input_code').val())">추가</button>
-                        </div>
-                    </div>
+            </div>
+            <div class="input-group mb-3">
+                <input id="input_code" class="form-control" placeholder="종목 코드 입력">
+                <div class="input-group-append">
+                <button type="button" class="btn btn-primary btn-sm" onclick="addMyport($('#input_code').val())">추가</button>
                 </div>
             </div>
             <div class="add_layer_close_button" onclick="closemyportlayer()">Close</div>
@@ -179,6 +179,7 @@
         <div class="flex_column info_box" id="myport_list">
             <div class="flex_row_space_between width_95perc padding_TB_10px">
                 <button type="button" class="btn btn-light btn-sm" id="myportUpdateButton" onclick="openmyportLayer()">종목 추가/수정</button>
+                <div id="myNowTime" style="display: inline-block; font-size: small"></div>
                 <button type="button" class="btn btn-light btn-sm" id="myportReadButton" onclick="myportRefresh()">새로고침</button>
             </div>
             <div class="overflow width_95perc">

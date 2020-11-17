@@ -1,3 +1,4 @@
+APScheduler==3.6.3
 bcrypt==3.2.0
 beautifulsoup4==4.9.3
 bokeh==2.2.3
@@ -29,5 +30,6 @@ six==1.15.0
 soupsieve==2.0.1
 tornado==6.1
 typing-extensions==3.7.4.3
+tzlocal==2.1
 urllib3==1.25.11
 Werkzeug==1.0.1

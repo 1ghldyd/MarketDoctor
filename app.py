@@ -304,7 +304,7 @@ def myport_del():
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
 def get_stock(code):
-    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'}
     #data = requests.get('https://finance.naver.com/item/main.nhn?code=' + code, headers=headers)
     url = requests.get('https://vip.mk.co.kr/newSt/price/daily.php?stCode=' + code, headers=headers)
 
@@ -320,7 +320,8 @@ def get_stock(code):
 def get_stock_cur(port_data,try_cnt):
     with pool_sema:
         try:
-            temp = requests.get('http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=' + port_data['code']).content
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'}
+            temp = requests.get('http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=' + port_data['code'], headers=headers, timeout=60.0).content
             if len(temp) != 0:
                 temp = temp[1:]
                 root = ET.fromstring(temp)
@@ -342,6 +343,14 @@ def get_stock_cur(port_data,try_cnt):
                 with get_stock_cur_data_lock:
                     global get_stock_cur_data
                     get_stock_cur_data.append({'code':port_data['code'], 'name':port_data['name'], 'current_price':cur_juka, 'debi':debi, 'rate':rate, 'volume':volume, 'myJangGubun':myJangGubun, 'myNowTime':myNowTime, 'DungRak':DungRak})
+
+        except requests.Timeout as err:
+            print('timeout-네트워크 지연')
+            if try_cnt>=3:
+                print('강제종료-네트워크 지연')
+                return None
+            else:
+                get_stock_cur(code,try_cnt=+1)
 
         except HTTPError as e:
             print(e)
@@ -412,7 +421,6 @@ def get_my_stock():
         duration = time.time() - start_time
         print(f"Downloaded current stock data {len(ports_data)} in {duration} seconds")
 
-        print(get_stock_cur_data)
         if(len(get_stock_cur_data) != 0):
             if(get_stock_cur_data[0]['myJangGubun'] == 'OnMarket'):
                 with get_stock_cur_data_lock:
@@ -423,12 +431,20 @@ def get_my_stock():
                     if float(stock_data['rate']) > 0:
                         targets = list(db.user.find({'port.code': stock_data['code'], 'port.notice_date': {'$lte': yesterday}, 'notice_rate_up': {'$lte': float(stock_data['rate'])}},{'_id': False, 'pw': False, 'port': False}))
                         for target in targets:
-                            target_lists.append({'email': target['email'], 'code': stock_data['code'], 'name': stock_data['name'], 'notice_rate_direction':'up', 'notice_rate': target['notice_rate_up'], 'id':target['id'], 'current_price': stock_data['current_price'], 'debi': stock_data['debi'], 'rate': stock_data['rate'],'myNowTime': stock_data['myNowTime']})
+                            a1 = list(db.user.find({'id': target['id']},{'_id': False, 'pw': False}))
+                            for index, sList in enumerate(a1[0]['port']):
+                                if sList['code'] == stock_data['code']:
+                                    if a1[0]['port'][index]['notice_date'] < yesterday:
+                                        target_lists.append({'email': target['email'], 'code': stock_data['code'], 'name': stock_data['name'], 'notice_rate_direction':'up', 'notice_rate_up': target['notice_rate_up'],'notice_rate_down': target['notice_rate_down'], 'id':target['id'], 'current_price': stock_data['current_price'], 'debi': stock_data['debi'], 'rate': stock_data['rate'],'myNowTime': stock_data['myNowTime']})
+
                     elif float(stock_data['rate']) < 0:
                         targets = list(db.user.find({'port.code': stock_data['code'], 'port.notice_date': {'$lte': yesterday}, 'notice_rate_down': {'$gte': float(stock_data['rate'])}},{'_id': False, 'pw': False, 'port': False}))
                         for target in targets:
-                            target_lists.append({'email': target['email'], 'code': stock_data['code'], 'name': stock_data['name'], 'notice_rate_direction':'down', 'notice_rate': target['notice_rate_down'], 'id':target['id'], 'current_price': stock_data['current_price'], 'debi': stock_data['debi'], 'rate': stock_data['rate'],'myNowTime': stock_data['myNowTime']})
-
+                            a1 = list(db.user.find({'id': target['id']}, {'_id': False, 'pw': False}))
+                            for index, sList in enumerate(a1[0]['port']):
+                                if sList['code'] == stock_data['code']:
+                                    if a1[0]['port'][index]['notice_date'] < yesterday:
+                                        target_lists.append({'email': target['email'], 'code': stock_data['code'], 'name': stock_data['name'], 'notice_rate_direction':'down', 'notice_rate_up': target['notice_rate_up'],'notice_rate_down': target['notice_rate_down'], 'id':target['id'], 'current_price': stock_data['current_price'], 'debi': stock_data['debi'], 'rate': stock_data['rate'],'myNowTime': stock_data['myNowTime']})
                 target_lists_sort = []
                 for target_list in target_lists:
                     target_lists_sort.append(target_list['id'])
@@ -439,12 +455,11 @@ def get_my_stock():
                     email_data_stock_info = []
                     for target_list in target_lists:
                         if target_list['id'] == id:
-                            email_data_stock_info.append({'name':target_list['name'],'code':target_list['code'],'notice_rate_direction':target_list['notice_rate_direction'],'notice_rate':target_list['notice_rate'], 'current_price': stock_data['current_price'], 'debi': stock_data['debi'], 'rate': stock_data['rate']})
+                            ret = next((index for (index, item) in enumerate(stock_datas) if item['code'] == target_list['code']), None)
+                            email_data_stock_info.append({'name':target_list['name'],'code':target_list['code'],'notice_rate_direction':target_list['notice_rate_direction'], 'notice_rate_up': target_list['notice_rate_up'],'notice_rate_down': target_list['notice_rate_down'], 'current_price': stock_datas[ret]['current_price'], 'debi': stock_datas[ret]['debi'], 'rate': stock_datas[ret]['rate']})
                             email = target_list['email']
-                    email_data[i] = {'id':id,'email':email,'myNowTime': stock_data['myNowTime'],'stock_info':email_data_stock_info}
+                    email_data[i] = {'id':id,'email':email,'myNowTime': stock_data['myNowTime'],'notice_rate_up': target_list['notice_rate_up'],'notice_rate_down': target_list['notice_rate_down'],'stock_info':email_data_stock_info}
                     i += 1
-                print(email_data)
-
                 start_time = time.time()
                 ts = [Thread(target=send_mail, args=(data,), daemon=True)
                       for data in email_data]
@@ -465,7 +480,6 @@ def send_mail(data):
     # 내 비밀번호를 입력합니다.
     my_password = "sgligoluramjhrrr"
 
-    #for data in email_data:
     # 이메일 받을 상대방의 주소를 입력합니다.
     you = data['email']
 
@@ -477,14 +491,24 @@ def send_mail(data):
     sub_name = []
     html_content = []
     for for_data in data['stock_info']:
+        if for_data['debi'] > 0:
+            debi = '+' + str('{0:,}'.format(for_data['debi']))
+            rate = '+' + str(for_data['rate'])
+        else:
+            debi = str('{0:,}'.format(for_data['debi']))
+            rate = str(for_data['rate'])
         ret = int(next((index for (index, item) in enumerate(ports_data) if item['code'] == for_data['code']), None))
         ports_data[ret]['notice_date'] = today
         with get_stock_cur_data_lock:
             db.user.update_one({'id': data['id']}, {'$set': {'port': ports_data}})
         sub_name.append(for_data['name'] + " ")
-        html_content.append(for_data['name'] + "(" + for_data['code'] + ") 전일대비 " + str(for_data['notice_rate']) + "% 이상 " + for_data['notice_rate_direction'] + " - 현재가 : " + str(for_data['current_price']) + "(" + str(for_data['debi']) + " / " + str(for_data['rate']) + ")" + "<br/>")
+        html_content.append(for_data['name'] + "(" + for_data['code'] + ")"  + " 현재가 : " + str('{0:,}'.format(for_data['current_price'])) + " (" + debi + " / " + rate + "%)" + "<br/><br/>")
+        notice_rate_up = for_data['notice_rate_up']
+        notice_rate_down = for_data['notice_rate_down']
     sub_name = ''.join(sub_name)
     html_content = ''.join(html_content)
+
+
 
     ## 여기서부터 코드를 작성하세요.
     # 이메일 작성 form을 받아옵니다.
@@ -496,7 +520,7 @@ def send_mail(data):
     # 수신자를 입력합니다.
     msg['To'] = you
     # 이메일 내용을 작성합니다.
-    html = 'MarketDoctor가 안내드립니다.<br/>알림 설정하신 종목을 확인하세요!<br/>* ' + data['myNowTime'] + ' 기준<br/><br/>' + html_content
+    html = 'MarketDoctor가 안내드립니다.<br/>알림 설정하신 종목을 확인하세요!<br/><br/>알람 설정 : 전일 대비, '+ str(notice_rate_up) + '% 상승 or ' + str(notice_rate_down) + '% 하락<br/><br/>' + html_content + '<br/><br/>* ' + data['myNowTime'] + ' 기준'
 
     # 이메일 내용의 타입을 지정합니다.
     part2 = MIMEText(html, 'html')
@@ -531,13 +555,13 @@ def job_scheduled():
 def job():
     get_my_stock()
 
-'''
+
 if __name__ == "__main__":
     sched = BackgroundScheduler(daemon=True)
     sched.start()
     sched.add_job(run, 'cron', hour='9', minute='0', id="check_stock_send_email")
     app.run('0.0.0.0',port=5000,debug=True)
-
+'''
 def find():
     finded = list(db.user.find({'port.code':'035420', 'notice_rate_down':{'$lte':-5}}, {'_id': False, 'id':False, 'pw':False,'port':False}))
     print(finded)
@@ -558,12 +582,13 @@ def time_calc():
     time = now.replace(hour=21, minute=30, second=0, microsecond=0)
     print(now < time)
 
-'''
+
 if __name__ == '__main__':
    #find()
    #send()
    #time_calc()
-   #job_scheduled()
+   job_scheduled()
    #get_my_stock()
    #run()
-   app.run('0.0.0.0',port=5000,debug=True)
+   #app.run('0.0.0.0',port=5000,debug=True)
+'''

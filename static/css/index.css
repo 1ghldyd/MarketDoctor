@@ -130,6 +130,18 @@ nav {
     align-items: center;
 }
 
+.height {
+    max-height: 60%;
+}
+
+.height_100vh {
+    height: 100vh;
+}
+
+.margin_T_20perc {
+    margin-top: 20%;
+}
+
 .flex_row_space_between {
     display: flex;
     flex-wrap: wrap;
