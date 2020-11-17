@@ -202,6 +202,7 @@ function myconfigModify() {
 }
 
 function saveMyConfig() {
+    let email,notice_rate_up,notice_rate_down
     if ($('#useremail').val() == "") {
         email = document.getElementById("useremail").placeholder;
     } else {
@@ -218,7 +219,7 @@ function saveMyConfig() {
     };
     if ($('#notice_rate_down').val() == "") {
         if (Number.isInteger(document.getElementById("notice_rate_down").placeholder)) {
-            notice_rate_up = document.getElementById("notice_rate_down").placeholder;
+            notice_rate_down = document.getElementById("notice_rate_down").placeholder;
         } else {
             notice_rate_down = ""
         }
@@ -361,9 +362,9 @@ function myportInfo(code,name) {
                     kospi200Perc = ((Number(kospi200Jisu)/(Number(kospi200Jisu)+Number(kospi200Debi)) - 1)*100).toFixed(2) + '%';
                     kospi200Debi = '-' + kospi200Debi
                 }
+                let CurJuka0,PrevJuka0,debiPerc
                 CurJuka0 = parseInt(CurJuka.replace(",",""));
                 PrevJuka0 = parseInt(PrevJuka.replace(",",""));
-                let debiPerc
                 if (DungRak == 1 || DungRak == 2) {
                     Debi = '+' + Debi
                     debiPerc = '+' + (((CurJuka0/PrevJuka0) - 1)*100).toFixed(2) + '%';
@@ -406,7 +407,7 @@ function myportInfo(code,name) {
                 $('#myport_info').append(temphtml);
 
                 let chart_data = response['chart_data']
-                item = JSON.parse(chart_data);
+                let item = JSON.parse(chart_data);
                 Bokeh.embed.embed_item(item, "myplot");
             } else if(response['result'] == 'success_but') {
                 let msg = response['msg'];
@@ -534,11 +535,23 @@ function showMyport() {
             if (response['result'] == 'success') {
                 let ports = response['ports_data']
                 for (let i = 0; i < ports.length; i++){
-                    let {code, name} = ports[i];
+                    let {code, name,notice_std,notice_perc_or_price,notice_up,notice_down} = ports[i];
+                    let percChecked,priceChecked
+                    if (notice_perc_or_price == 'perc') {
+                        percChecked = 'checked'
+                    } else if (notice_perc_or_price == 'price') {
+                        priceChecked = 'checked'
+                    }
                     let temphtml =`<tr>
                                        <td>${i+1}</td>
                                        <td>${code}</td>
                                        <td>${name}</td>
+                                       <td><span>알림 기준 설정 : </span>
+                                           [<input type="radio" name="chk_perc_or_price_${code}" value="perc" ${percChecked} id="notice_perc_${code}" style="margin: 3px 5px"> % ]
+                                           [<input type="radio" name="chk_perc_or_price_${code}" value="price" ${priceChecked} id="notice_price_${code}" style="margin: 3px 5px"> 금액 ]</td>
+                                       <td><input type="number" class="form-control" id="notice_std_${code}" title="% 또는 금액 기준의 설정 수치 이상으로 변 시 알림 메일이 발송됩니다." placeholder="${notice_std}"></td>
+                                       <td><input type="number" class="form-control" id="notice_up_${code}" title="% 또는 금액 기준의 설정 수치 이상으로 변 시 알림 메일이 발송됩니다." placeholder="${notice_up}"></td>
+                                       <td><input type="number" class="form-control" id="notice_down_${code}" title="% 또는 금액 기준의 설정 수치 이상으로 변 시 알림 메일이 발송됩니다." placeholder="${notice_down}"></td>
                                        <td><a href="#" onclick="delMyport('${code}','${name}')" class="card-footer-item has-text-danger">
                                            삭제<span class="icon"><i class="fas fa-ban"></i></span>
                                        </a></td>
@@ -598,4 +611,86 @@ function delMyport(code,name) {
         }
     });
 
+}
+
+function saveMyportAlram() {
+    let rowCount = document.getElementById('myport_box_modify').rows.length;
+    let notice_data_list = [];
+    let notice_data_ = [];
+    for (let i = 0; i < rowCount; i++) {
+        let code = document.getElementById('myport_box_modify').rows[i].cells[1].innerHTML;
+        let name = document.getElementById('myport_box_modify').rows[i].cells[2].innerHTML;
+
+        let notice_std, notice_up, notice_down, notice_perc_or_price;
+        if (Number.isInteger(parseInt($('#notice_std_' + code).val()))) {
+            notice_std = parseInt($('#notice_std_' + code).val());
+        } else if ($('#notice_std_' + code).val() == "") {
+            if (Number.isInteger(parseInt(document.getElementById("notice_std_" + code).placeholder))) {
+                notice_std = parseInt(document.getElementById("notice_std_" + code).placeholder);
+            } else {
+                notice_std = "";
+            };
+        } else {
+            alert(name + '(' + code + ') 종목의 기준가격은 숫자만 입력해 주세요.');
+            return false;
+        };
+        if (Number.isInteger(parseInt($('#notice_up_' + code).val()))) {
+            notice_up = parseInt($('#notice_up_' + code).val());
+        } else if ($('#notice_up_' + code).val() == "") {
+            if (Number.isInteger(parseInt(document.getElementById("notice_up_" + code).placeholder))) {
+                notice_up = parseInt(document.getElementById("notice_up_" + code).placeholder);
+            } else {
+                notice_up = "";
+            };
+        } else {
+            alert(name + '(' + code + ') 종목의 상승가격은 숫자만 입력해 주세요.');
+            return false;
+        };
+        if (Number.isInteger(parseInt($('#notice_down_' + code).val()))) {
+            notice_down = parseInt($('#notice_down_' + code).val());
+        } else if ($('#notice_down_' + code).val() == "") {
+            if (Number.isInteger(parseInt(document.getElementById("notice_down_" + code).placeholder))) {
+                notice_down = parseInt(document.getElementById("notice_down_" + code).placeholder);
+            } else {
+                notice_down = "";
+            };
+        } else {
+            alert(name + '(' + code + ') 종목의 하락가격은 숫자만 입력해 주세요.');
+            return false;
+        };
+
+        if (notice_up !== "" || notice_down !== "") {
+            if (document.getElementById('notice_perc_' + code).checked || document.getElementById('notice_price_' + code).checked) {
+                if (document.getElementById('notice_perc_' + code).checked) {
+                    notice_perc_or_price = 'perc';
+                } else {
+                    notice_perc_or_price = 'price';
+                };
+            } else {
+                alert(name + '(' + code + ') 종목의 알림기준을 설정해 주세요. (금액 또는 %)');
+                return false;
+            };
+        } else {
+            notice_perc_or_price = "";
+        };
+
+        notice_data_[i] = {'code':code,'notice_std':notice_std,'notice_up':notice_up,'notice_down':notice_down,'notice_perc_or_price':notice_perc_or_price}
+        notice_data_list = notice_data_list + JSON.stringify(notice_data_[i]) + ','
+    }
+
+    $.ajax({
+        type: "POST",
+        url: "/api/myport-modify-alram",
+        headers: {'token': $.cookie('mytoken')},
+        data: {'data':notice_data_list},
+        success: function (response) {
+            if (response['result'] == 'success') {
+                let msg = response['msg'];
+                alert(msg);
+            } else {
+                let msg = response['msg'];
+                alert(msg);
+            };
+        }
+    });
 }

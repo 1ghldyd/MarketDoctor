@@ -46,6 +46,13 @@ nav {
     width: 500px;
 }
 
+.add_layer_form_myport {
+    width: 800px;
+    height: ;
+    height: calc(100vh - 200px);
+    align-items: center;
+}
+
 .add_layer_close_button {
     padding: 15px;
     text-align: center;

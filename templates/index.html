@@ -124,7 +124,7 @@
 <div>
     <div class="add_layer" id="myportlayer">
         <div class="blank_width_50px"></div>
-        <div class="add_layer_form">
+        <div class="add_layer_form_myport overflow">
             <div>
                 <table class="table myport_table" style="text-align: center">
                     <thead>
@@ -132,6 +132,10 @@
                         <th scope="col">번호</th>
                         <th scope="col">종목코드</th>
                         <th scope="col">종목명</th>
+                        <th scope="col">알림기준</th>
+                        <th scope="col">기준가격</th>
+                        <th scope="col">상승가격</th>
+                        <th scope="col">하락가격</th>
                         <th scope="col">제거</th>
                     </tr>
                     </thead>
@@ -153,6 +157,7 @@
                     </div>
                 </div>
             </div>
+            <button type="button" class="btn btn-light btn-sm" onclick="saveMyportAlram()">수정하기</button>
             <div class="add_layer_close_button" onclick="closemyportlayer()">Close</div>
         </div>
         <div class="blank_width_50px"></div>
@@ -178,7 +183,7 @@
     <div id="mycontent">
         <div class="flex_column info_box" id="myport_list">
             <div class="flex_row_space_between width_95perc padding_TB_10px">
-                <button type="button" class="btn btn-light btn-sm" id="myportUpdateButton" onclick="openmyportLayer()">종목 추가/수정</button>
+                <button type="button" class="btn btn-light btn-sm" id="myportUpdateButton" onclick="openmyportLayer()">종목/알림 수정</button>
                 <button type="button" class="btn btn-light btn-sm" id="myportReadButton" onclick="myportRefresh()">새로고침</button>
             </div>
             <div class="overflow width_95perc">
