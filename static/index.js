@@ -181,7 +181,6 @@ function myconfigModify() {
         success: function (response) {
             if (response['result'] == 'success') {
                 document.getElementById("useremail").placeholder = response['payload']['email'];
-                console.log(response['payload']);
                 if (response['payload']['notice_rate_up'] !== "") {
                     document.getElementById("notice_rate_up").placeholder = response['payload']['notice_rate_up'];
                 } else {
