@@ -263,13 +263,13 @@ function myportRefresh() {
                 if (state > 10) {
                     $('#myport_box').empty();
                     let temphtml = `<tr>
-                                       <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>주가 정보를 받아오고 있습니다.<br/><br/>서버 접속량이 많아 조회가 지연되고 있습니다.</th>
+                                       <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>주가 정보를 받아오고 있습니다.<br/><br/><span style="color: indianred">서버 접속량이 많아 조회가 지연되고 있습니다.</span></th>
                                    </tr>`
                     $('#myport_box').append(temphtml);
                 } else if (state > 60) {
                     $('#myport_box').empty();
                     let temphtml = `<tr>
-                                       <th scope="col" id="loading" colspan="4">서버 접속량이 매우 많아 지금은 조회가 어렵습니다.<br/>잠시 후 다시 조회 해 주세요.</th>
+                                       <th scope="col" id="loading" colspan="4"><span style="color: indianred">서버 접속량이 매우 많아 지금은 조회가 어렵습니다.<br/>잠시 후 다시 조회 해 주세요.</span></th>
                                    </tr>`
                     $('#myport_box').append(temphtml);
                 } else {
@@ -347,11 +347,11 @@ function myportInfo(code, name) {
             if (response['result'] == 'success') {
                 let state = response['state']
                 if (state > 10) {
-                    $('#myport_info').html('<br/><br/>잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다.<br/>서버 접속량이 많아 조회가 지연되고 있습니다.<br/><br/><br/>');
+                    $('#myport_info').html('<br/><br/>잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다.<br/><span style="color: indianred">서버 접속량이 많아 조회가 지연되고 있습니다.</span><br/><br/><br/>');
                 } else if (state > 60) {
-                    $('#myport_info').html('<br/><br/>서버 접속량이 매우 많아 지금은 조회가 어렵습니다.<br/>잠시 후 다시 조회 해 주세요.<br/><br/><br/>');
+                    $('#myport_info').html('<br/><br/><span style="color: indianred">서버 접속량이 매우 많아 지금은 조회가 어렵습니다.<br/>잠시 후 다시 조회 해 주세요.</span><br/><br/><br/>');
                 } else {
-                    $('#myport_info').html('<br/><br/>잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다...<br/><br/><br/>');
+                    $('#myport_info').html('<br/><br/>잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다.<br/><br/><br/>');
                 }
             }
         }
@@ -659,6 +659,37 @@ function delMyport(code, name) {
                 //let msg = response['msg'];
                 //alert(msg);
                 showMyportRefresh();
+            }
+        }
+    });
+}
+
+function stockSearch() {
+    //let search = $('#button_search').val()
+    $.ajax({
+        type: 'POST',
+        url: '/api/search',
+        headers: {'token': $.cookie('mytoken')},
+        data: {'search': $('#button_search').val()},
+        success: function (response) {
+            if (response['result'] == 'success') {
+                let search_result = response['search'];
+                console.log(search_result)
+                for (let i = 0; i < search_result.length; i++) {
+                    let code = search_result[i][1].toString()
+                    if (code.length < 6) {
+                        for (let j = 0; j < (7 - code.length); j++) {
+                            code = '0' + code
+                        }
+                    }
+                    let temphtml = `<tr>
+                                       <td>${search_result[i][0]}</td>
+                                       <td>${code}</td>
+                                       <td><a href="#" onclick="myportInfo('${code}','${search_result[i][0]}')" class="card-footer-item has-text-danger">바로보기<span class="icon"><i class="fas fa-ban"></i></span></a></td>
+                                       <td><a href="#" onclick="addMyport('${code}')" class="card-footer-item has-text-danger">등록하기<span class="icon"><i class="fas fa-ban"></i></span></a></td>
+                                   </tr>`;
+                    $('#search_result').append(temphtml);
+                }
             }
         }
     });

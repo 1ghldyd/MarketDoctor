@@ -170,6 +170,8 @@ def myport_refresh():
                 ports.append({'code':port['code'], 'name':port['name'], 'current_price':port_info['price'], 'debi':port_info['debi'], 'rate':port_info['rate'], 'volume':port_info['volume']})
             return jsonify({'result': 'success', 'ports_data': ports})
             '''
+            #for index, sList in enumerate(ports_data):
+
             with get_stock_cur_data_lock:
                 global get_stock_cur_data
                 get_stock_cur_data = []
@@ -630,9 +632,43 @@ def server_state():
     payload = token_payload_read()
     if payload is not None:
         global duration
-        return jsonify({'result': 'success', 'state': int(duration)})
+        if duration != '':
+            state = int(duration)
+        else:
+            state = 0
+        return jsonify({'result': 'success', 'state': state})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
+
+
+@app.route('/api/search', methods=['POST'])
+def stock_search():
+    user = token_payload_read()
+    if user is not None:
+        df = pd.read_html('http://kind.krx.co.kr/corpgeneral/corpList.do?method=download', header=0)[0]
+        df = df.drop(df.columns[[2, 3, 4, 5, 6, 7, 8]], axis='columns')
+        print(df.head(1))
+        '''
+        df.reset_index(inplace=True)
+        db_df = df.to_dict("records")
+        db.stock.remove()
+        db.stock.insert_many(db_df)
+        
+        
+        user_data = db.user.find_one({'id': user['id']}, {'_id': False})
+        delete_code = request.form['code']
+        '''
+        search_keyword = request.form['search']
+        print(search_keyword)
+        df = df[df['회사명'].str.contains(search_keyword)]
+        print(df)
+        search_value = df.values.tolist()
+        print(search_value)
+        return jsonify({'result': 'success', 'search': search_value})
+    else:
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
+
+
 
 
 def run():
@@ -652,8 +688,10 @@ def job_scheduled():
 
 def job():
     get_my_stock()
-
-
+'''
+if __name__ == '__main__':
+   stock_search()
+'''
 if __name__ == "__main__":
     '''
     fmt = "%Y-%m-%d %H:%M:%S %Z%z"
