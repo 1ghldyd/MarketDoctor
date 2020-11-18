@@ -29,9 +29,11 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from pytz import timezone
+
 app = Flask(__name__)
 
-client = MongoClient('mongodb://test:test@localhost',27017)
+client = MongoClient('mongodb://test:test@localhost',27017) #mongodb://test:test@localhost
 db = client.marketdoctor
 
 SECRET_KEY = '!r1l1a1x2o2g3k3s3'  # JWT 토큰을 만들 때 필요한 비밀문자열입니다.
@@ -199,7 +201,7 @@ def chart(data):
     show(p)
     '''
     df = pd.DataFrame(data, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
-    p_candlechart = figure(sizing_mode='scale_width', plot_height=150, x_range=(-1, len(df)), tools=['crosshair'],
+    p_candlechart = figure(sizing_mode='scale_width', plot_height=190, x_range=(-1, len(df)), tools=['crosshair'],
                            y_axis_location="right")
     inc = df.close >= df.open
     dec = df.open > df.close
@@ -245,7 +247,7 @@ def chart(data):
             ("저가", "@low2{0,0}"),
             ("종가", "@bottom2{0,0}")
         ]))
-    p_volumechart = figure(sizing_mode='scale_width', plot_height=100, x_range=p_candlechart.x_range,
+    p_volumechart = figure(sizing_mode='scale_width', plot_height=110, x_range=p_candlechart.x_range,
                            tools=['crosshair'], y_axis_location="right")
     r3 = p_volumechart.vbar(x='x1', width=width, top='volume1', source=inc_source, fill_color="black",
                             line_color="black")
@@ -627,9 +629,28 @@ def job():
 
 
 if __name__ == "__main__":
-    sched = BackgroundScheduler(daemon=True)
+    '''
+    fmt = "%Y-%m-%d %H:%M:%S %Z%z"
+    UTC = datetime.now(timezone('UTC'))
+    KST = datetime.now(timezone('Asia/Seoul'))
+    print(UTC)
+    print(KST)
+    print(UTC.strftime(fmt))
+    print(KST.strftime(fmt))
+    print(datetime.now())
+    '''
+    sched = BackgroundScheduler(daemon=True, timezone="Asia/Seoul")
     sched.start()
+
+    starttime = datetime.now() + timedelta(seconds=10)
+    hour = starttime.hour
+    minute = starttime.minute
+    second = starttime.second
+    sched.add_job(run, 'cron', hour=hour, minute=minute, second=second, id="check_stock_send_email")
+    sleep(15)
+    sched.remove_job('check_stock_send_email')
     sched.add_job(run, 'cron', hour='9', minute='0', id="check_stock_send_email")
+
     app.run('0.0.0.0', port=5000, debug=True)
 '''
 def find():
@@ -657,7 +678,7 @@ if __name__ == '__main__':
    #find()
    #send()
    #time_calc()
-   job_scheduled()
+   #job_scheduled()
    #get_my_stock()
    #run()
    #app.run('0.0.0.0',port=5000,debug=True)

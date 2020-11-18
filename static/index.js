@@ -383,28 +383,28 @@ function myportInfo(code, name) {
                             <table class="width_95perc" style="text-align: center;">
                                 <tbody>
                                     <tr style="border-bottom: 1px solid">
-                                        <th class="font_big" style="padding: 10px 0px"><span>${name} </span><span style="display: inline-block">( ${code} )</span></th>
+                                        <th class="font_big" style="padding: 10px 0px"><div style="display: inline-block">${name} </div><div style="display: inline-block">( ${code} )</div></th>
                                         <th>${myNowTime} ${myJangGubun}</th>
                                     </tr>
                                     <tr>
-                                        <th rowspan="2" class="font_color_${DungRak} font_big"><span class="big_font">${CurJuka}</span> ${Debi} (${debiPerc})</th>
-                                        <th>시가 ${StartJuka} / 고가 ${HighJuka} / 저가 ${LowJuka}</th>
+                                        <th rowspan="2" class="font_color_${DungRak} font_big"><div class="big_font" style="display: inline-block">${CurJuka}</div> ${Debi} (${debiPerc})</th>
+                                        <th><div style="display: inline-block">시가 ${StartJuka} / </div><div style="display: inline-block">고가 ${HighJuka} / </div><div style="display: inline-block">저가 ${LowJuka}</div></th>
                                     </tr>
                                     <tr>
-                                        <th>전일 ${PrevJuka} / 상한가 ${UpJuka} / 하한가 ${DownJuka}</th>
+                                        <th><div style="display: inline-block">전일 ${PrevJuka} / </div><div style="display: inline-block">상한가 ${UpJuka} / </div><div style="display: inline-block">하한가 ${DownJuka}</div></th>
                                     </tr>
                                     <tr>
-                                        <th colspan="2">거래량 ${Volume} / 52주 최고 ${High52} / 52주 최저 ${Low52} / 주식수 ${Amount} / 액면가 ${FaceJuka} / Per ${Per}</th>
+                                        <th colspan="2"><div style="display: inline-block">거래량 ${Volume} / </div><div style="display: inline-block">52주 최고 ${High52} / 52주 최저 ${Low52} / </div><div style="display: inline-block">주식수 ${Amount} / 액면가 ${FaceJuka} / Per ${Per}</div></th>
                                     </tr>
                                 </tbody>
                             </table>
-                            <div class="width_95perc" style="padding-top: 5px">
+                            <div class="width_95perc" style="padding-top: 5px; margin-bottom: 10px">
                                 <div id="myplot"></div>
                             </div>                            
                             <div class="width_95perc" style="text-align: center">
-                                <span>KOSPI </span><span class="font_color_${kospiBuho} font_weight"> ${kospiJisu} ${kospiDebi} (${kospiPerc})</span><span> / </span>
-                                <span>KOSDAQ </span><span class="font_color_${kosdaqJisuBuho} font_weight">${kosdaqJisu} ${kosdaqJisuDebi} (${kosdaqPerc})</span><span> / </span>
-                                <span>KOSPI200 </span><span class="font_color_${kospi200Buho} font_weight">${kospi200Jisu} ${kospi200Debi} (${kospi200Perc})</span>
+                                <div style="display: inline-block"><span>KOSPI </span><span class="font_color_${kospiBuho} font_weight"> ${kospiJisu} ${kospiDebi} (${kospiPerc})</span><span> / </span></div>
+                                <div style="display: inline-block"><span>KOSDAQ </span><span class="font_color_${kosdaqJisuBuho} font_weight">${kosdaqJisu} ${kosdaqJisuDebi} (${kosdaqPerc})</span><span> / </span></div>
+                                <div style="display: inline-block"><span>KOSPI200 </span><span class="font_color_${kospi200Buho} font_weight">${kospi200Jisu} ${kospi200Debi} (${kospi200Perc})</span></div>
                             </div>
                             `
                 $('#myport_info').append(temphtml);

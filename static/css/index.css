@@ -1,4 +1,39 @@
+/*
+@media all and (max-width: 750px) {
+  html { font-size: 50%; }
+}
+@media screen and (min-width: 769px) {
+   //데스크탑에서 사용될 스타일을 여기에 작성합니다.
+}
+*/
+
+@media all and (max-width: 768px) {
+    /* 모바일에 사용될 스트일 시트를 여기에 작성합니다. */
+  html { font-size: 62.5%; }
+}
+
+/*
+@media (max-width:360px){html{font-size:10px;}}
+@media (min-width:361px) and (max-width:399px){html{font-size:11px;}}
+@media (min-width:400px) and (max-width:439px){html{font-size:12px;}}
+@media (min-width:440px) and (max-width:479px){html{font-size:13px;}}
+@media (min-width:480px) and (max-width:519px){html{font-size:14px;}}
+@media (min-width:520px) and (max-width:559px){html{font-size:15px;}}
+@media (min-width:560px) and (max-width:599px){html{font-size:16px;}}
+@media (min-width:600px) and (max-width:639px){html{font-size:17px;}}
+@media (min-width:640px) and (max-width:679px){html{font-size:18px;}}
+@media (min-width:680px) and (max-width:719px){html{font-size:19px;}}
+@media (min-width:720px) and (max-width:759px){html{font-size:20px;}}
+@media (min-width:760px) and (max-width:799px){html{font-size:21px;}}
+@media (min-width:800px) and (max-width:839px){html{font-size:22px;}}
+@media (min-width:840px) and (max-width:879px){html{font-size:23px;}}
+@media (min-width:880px){html{font-size:24px;}}
+*/
+
+html { font-size: 16px; }/*62.5%*/
+
 body {
+    font-size: 1rem;
     color: azure;
     height: 100vh;
     background-image: url('/static/main.jpg');
@@ -89,7 +124,7 @@ nav {
 
 #myport_list {
     width: 35%;
-    min-width: 500px;
+    min-width: 350px;
     max-width: 600px;
     height: calc(100vh - 197px);
     align-items: center;
@@ -106,9 +141,10 @@ nav {
 
 #myport_info {
     width:60%;
-    min-width: 480px;
+    min-width: 340px;
     max-width: 1000px;
     align-items: center;
+    margin-bottom: 50px;
 }
 
 .float_center {
