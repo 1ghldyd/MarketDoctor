@@ -172,7 +172,7 @@ def myport_refresh():
             print(f"Downloaded current stock data {len(ports_data)} in {duration} seconds")
             return jsonify({'result': 'success', 'ports_data': get_stock_cur_data})
         else:
-            return jsonify({'result': 'success_but', 'msg': '등록된 종목이 없습니다.'})
+            return jsonify({'result': 'success_but', 'msg': '등록된 종목이 없습니다.<br/><br/>주식 종목을 추가 해 주세요.'})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
@@ -642,12 +642,12 @@ if __name__ == "__main__":
     sched = BackgroundScheduler(daemon=True, timezone="Asia/Seoul")
     sched.start()
 
-    starttime = datetime.now() + timedelta(seconds=10)
+    starttime = datetime.now() + timedelta(seconds=6)
     hour = starttime.hour
     minute = starttime.minute
     second = starttime.second
     sched.add_job(run, 'cron', hour=hour, minute=minute, second=second, id="check_stock_send_email")
-    sleep(15)
+    sleep(10)
     sched.remove_job('check_stock_send_email')
     sched.add_job(run, 'cron', hour='9', minute='0', id="check_stock_send_email")
 

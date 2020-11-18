@@ -7,10 +7,6 @@
 }
 */
 
-@media all and (max-width: 768px) {
-    /* 모바일에 사용될 스트일 시트를 여기에 작성합니다. */
-  html { font-size: 62.5%; }
-}
 
 /*
 @media (max-width:360px){html{font-size:10px;}}
@@ -57,7 +53,7 @@ nav {
 #nav_buttonbox {
     padding-left: 5px;
     margin-left: 2%;
-    margin-right: 2%;
+    /*margin-right: 2%;*/
 }
 
 .blank_width_50px {
@@ -98,6 +94,7 @@ nav {
     position: relative;
     padding: 20% 0px;
     text-align: center;
+    font-size: 2rem;
 }
 
 #myconfig {
@@ -199,11 +196,11 @@ nav {
 }
 
 .font_color_4 {
-    color: blue;
+    color: dodgerblue;
 }
 
 .font_color_5 {
-    color: blue;
+    color: dodgerblue;
 }
 
 .font_big {
@@ -216,4 +213,13 @@ nav {
 
 #myport_info th,tr {
     padding: 5px;
+}
+
+
+@media all and (max-width: 768px) {
+    /* 모바일에 사용될 스트일 시트를 여기에 작성합니다. */
+    html { font-size: 75$%; }/*62.5%*/
+    #title { font-size: 1.5rem; }
+    #myconfig { font-size: 0.9rem; }
+    #welcome_text { font-size: 1.5rem; padding: 30% 0px;}
 }
