@@ -121,14 +121,16 @@ nav {
 #myport_list {
     width: 35%;
     min-width: 356px;
-    max-width: 600px;
+    max-width: 800px;
     height: calc(100vh - 197px);
     align-items: center;
     margin-bottom: 50px;
 }
 
-.padding_TB_10px {
-    padding: 10px 0px;
+.margin_TB_10px {
+    /*padding: 10px 0px;*/
+    margin: 10px 0px;
+    flex-shrink: 0;
 }
 
 .overflow {
@@ -140,7 +142,7 @@ nav {
     min-width: 360px;
     max-width: 1000px;
     align-items: center;
-    margin-bottom: 50px;
+    padding-bottom: 50px;
 }
 
 .float_center {
@@ -218,6 +220,23 @@ nav {
     padding: 5px;
 }
 
+/*(min-width:768px)*/
+@media (min-width:926px) and (max-width:1300px){
+    #myNowTime { font-size: 0.7rem; }
+}
+
+@media (min-width:500px) and (max-width:925px){
+    #myNowTime { font-size: 1rem; }
+}
+
+@media all and (max-width:499px){
+    #myNowTime { font-size: 0.7rem; }
+}
+
+@media all and (max-width:925px){
+    #myport_list{width:calc(100vw);}
+    #myport_info{width:calc(100vw);}
+}
 
 @media all and (max-width: 768px) {
     /* 모바일에 사용될 스트일 시트를 여기에 작성합니다. */
@@ -225,5 +244,7 @@ nav {
     #title { font-size: 1.6rem; }
     #myconfig { font-size: 0.9rem; }
     #welcome_text { font-size: 1.5rem; padding: 30% 0px;}
-    #myNowTime { font-size: 0.7rem; }
+    #myport_list {margin-bottom: 100px;}
+    #myport_info {margin-bottom: 100px;}
 }
+

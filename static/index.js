@@ -252,11 +252,36 @@ function saveMyConfig() {
 }
 
 function myportRefresh() {
-    $('#myport_box').empty();
-    let temphtml = `<tr>
-                       <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>주가 정보를 받아오고 있습니다.<br/>등록 종목 갯수와 서버 상태에 따라 <div style="display: inline-block">다소 지연 될 수 있습니다...</div></th>
-                   </tr>`
-    $('#myport_box').append(temphtml);
+    $.ajax({
+        type: "GET",
+        url: "/api/server-state",
+        headers: {'token': $.cookie('mytoken')},
+        data: {},
+        success: function (response) {
+            if (response['result'] == 'success') {
+                let state = response['state']
+                if (state > 10) {
+                    $('#myport_box').empty();
+                    let temphtml = `<tr>
+                                       <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>주가 정보를 받아오고 있습니다.<br/><br/>서버 접속량이 많아 조회가 지연되고 있습니다.</th>
+                                   </tr>`
+                    $('#myport_box').append(temphtml);
+                } else if (state > 60) {
+                    $('#myport_box').empty();
+                    let temphtml = `<tr>
+                                       <th scope="col" id="loading" colspan="4">서버 접속량이 매우 많아 지금은 조회가 어렵습니다.<br/>잠시 후 다시 조회 해 주세요.</th>
+                                   </tr>`
+                    $('#myport_box').append(temphtml);
+                } else {
+                    $('#myport_box').empty();
+                    let temphtml = `<tr>
+                                       <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>주가 정보를 받아오고 있습니다.</th>
+                                   </tr>`
+                    $('#myport_box').append(temphtml);
+                }
+            }
+        }
+    });
 
     $.ajax({
         type: "GET",
@@ -282,6 +307,7 @@ function myportRefresh() {
                     $('#myport_box').append(temphtml);
 
                     $('#myNowTime').text(`${myNowTime} 기준`)
+                    //document.getElementById("myport_list_top").style.margin = '10px 0px;'
                     //$('#myNowTime').empty();
                     //$('#myNowTime').append(`${myNowTime} 기준`);
                 }
@@ -306,16 +332,30 @@ function myportInfo(code, name) {
         if(0 > filter.indexOf(navigator.platform.toLowerCase())){
             //alert("Mobile");
             //window.scrollTo({top:0, behavior:'auto'});
-            window.scrollTo(0,document.body.scrollHeight);
+            window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
         }else{
             //alert("PC");
         }
     }
 
-    $('#myport_info').text('잠시만 기다려 주세요. 종목 정보를 받아오고 있습니다...');
-    //$('#myport_info').empty();
-    //let temphtml ='잠시만 기다려 주세요.<br/><br/>종목 정보를 받아오고 있습니다...`
-    //$('#myport_box').append(temphtml);
+    $.ajax({
+        type: "GET",
+        url: "/api/server-state",
+        headers: {'token': $.cookie('mytoken')},
+        data: {},
+        success: function (response) {
+            if (response['result'] == 'success') {
+                let state = response['state']
+                if (state > 10) {
+                    $('#myport_info').html('<br/><br/>잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다.<br/>서버 접속량이 많아 조회가 지연되고 있습니다.<br/><br/><br/>');
+                } else if (state > 60) {
+                    $('#myport_info').html('<br/><br/>서버 접속량이 매우 많아 지금은 조회가 어렵습니다.<br/>잠시 후 다시 조회 해 주세요.<br/><br/><br/>');
+                } else {
+                    $('#myport_info').html('<br/><br/>잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다...<br/><br/><br/>');
+                }
+            }
+        }
+    });
 
     $.ajax({
         type: "POST",

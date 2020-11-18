@@ -54,7 +54,7 @@ SECRET_KEY = '!r1l1a1x2o2g3k3s3'  # JWT 토큰을 만들 때 필요한 비밀문
 get_stock_cur_data = []  # 멀티스레드용 전역함수
 get_stock_cur_data_lock = Lock()
 pool_sema = Semaphore(8)
-
+duration = ''
 
 @app.route('/')
 def home():
@@ -181,6 +181,7 @@ def myport_refresh():
                 t.start()
             for t in ts:
                 t.join()
+            global duration
             duration = time.time() - start_time
             print(f"Downloaded current stock data {len(ports_data)} in {duration} seconds")
             return jsonify({'result': 'success', 'ports_data': get_stock_cur_data})
@@ -196,6 +197,7 @@ def myport_info():
     if payload is not None:
         start_time = time.time()
         stock_data = get_stock_info(request.form['code'], 1)
+        global duration
         duration = time.time() - start_time
         print(f"Downloaded seleted current stock info in {duration} seconds")
         chart_data = chart(stock_data['stock_data'][0])
@@ -466,6 +468,7 @@ def get_my_stock():
             t.start()
         for t in ts:
             t.join()
+        global duration
         duration = time.time() - start_time
         print(f"Downloaded current stock data {len(ports_data)} in {duration} seconds")
 
@@ -620,6 +623,16 @@ def send_mail(data):
     s.quit()
 
     print(data['id'], '고객에게 메일 발송 완료')
+
+
+@app.route('/api/server-state', methods=['GET'])
+def server_state():
+    payload = token_payload_read()
+    if payload is not None:
+        global duration
+        return jsonify({'result': 'success', 'state': int(duration)})
+    else:
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
 
 def run():

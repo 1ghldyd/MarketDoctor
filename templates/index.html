@@ -183,14 +183,10 @@
     </div>
     <div id="mycontent">
         <div class="flex_column info_box" id="myport_list">
-            <div class="flex_row_space_between width_95perc padding_TB_10px">
-                <button type="button" class="btn btn-light btn-sm" id="myportUpdateButton" onclick="openmyportLayer()">
-                    종목 추가/수정
-                </button>
-                <div class="padding_TB_10px" id="myNowTime" style="display: inline-block"></div>
-                <button type="button" class="btn btn-light btn-sm" id="myportReadButton" onclick="myportRefresh()">
-                    새로고침
-                </button>
+            <div class="flex_row_space_between width_95perc margin_TB_10px" id="myport_list_top">
+                <button type="button" class="btn btn-light btn-sm" id="myportUpdateButton" onclick="openmyportLayer()">종목 추가/수정</button>
+                <div id="myNowTime" style="display: inline-block"></div>
+                <button type="button" class="btn btn-light btn-sm" id="myportReadButton" onclick="myportRefresh()">새로고침</button>
             </div>
             <div class="overflow width_95perc">
                 <table class="table float_center" style="text-align: center">
@@ -211,7 +207,7 @@
             </div>
         </div>
         <div class="info_box flex_column" id="myport_info" style="text-align: center">
-            <br/><br/>주식 종목 상세 정보<br/><br/>리스트의 주식 종목을 클릭하시면,<br/>상세 정보를 볼 수 있습니다.<br/><br/><br/>
+            <div><br/><br/>주식 종목 상세 정보<br/><br/>리스트의 주식 종목을 클릭하시면, <div style="display: inline-block">상세 정보를 볼 수 있습니다.</div><br/><br/><br/></div>
         </div>
     </div>
 </div>
