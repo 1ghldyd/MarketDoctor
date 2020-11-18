@@ -130,6 +130,7 @@ function logined() {
     $('#myport_box').empty();
     myconfigGet();
     myportRefresh();
+    window.scrollTo({top:0, behavior:'auto'});
 }
 
 function logout() {
@@ -253,7 +254,7 @@ function saveMyConfig() {
 function myportRefresh() {
     $('#myport_box').empty();
     let temphtml = `<tr>
-                       <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>주가 정보를 받아오고 있습니다.<br/>등록 종목 갯수와 서버 상태에 따라 다소 지연 될 수 있습니다...</th>
+                       <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>주가 정보를 받아오고 있습니다.<br/>등록 종목 갯수와 서버 상태에 따라 <div style="display: inline-block">다소 지연 될 수 있습니다...</div></th>
                    </tr>`
     $('#myport_box').append(temphtml);
 
@@ -279,8 +280,10 @@ function myportRefresh() {
                                    <td class="font_color_${DungRak} font_weight">${debi.toLocaleString()}<br/>${rate}%</td>
                                </tr>`;
                     $('#myport_box').append(temphtml);
-                    $('#myNowTime').empty();
-                    $('#myNowTime').append(`${myNowTime} 기준`);
+
+                    $('#myNowTime').text(`${myNowTime} 기준`)
+                    //$('#myNowTime').empty();
+                    //$('#myNowTime').append(`${myNowTime} 기준`);
                 }
             } else if (response['result'] == 'success_but') {
                 let msg = response['msg'];
@@ -298,11 +301,21 @@ function myportRefresh() {
 }
 
 function myportInfo(code, name) {
-    $('#myport_info').empty();
-    // let temphtml =`<tr>
-    //                    <th scope="col" id="loading" colspan="4">잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다...</th>
-    //                </tr>`
-    // $('#myport_box').append(temphtml);
+    let filter = "win16|win32|win64|mac";
+    if(navigator.platform){
+        if(0 > filter.indexOf(navigator.platform.toLowerCase())){
+            //alert("Mobile");
+            //window.scrollTo({top:0, behavior:'auto'});
+            window.scrollTo(0,document.body.scrollHeight);
+        }else{
+            //alert("PC");
+        }
+    }
+
+    $('#myport_info').text('잠시만 기다려 주세요. 종목 정보를 받아오고 있습니다...');
+    //$('#myport_info').empty();
+    //let temphtml ='잠시만 기다려 주세요.<br/><br/>종목 정보를 받아오고 있습니다...`
+    //$('#myport_box').append(temphtml);
 
     $.ajax({
         type: "POST",
@@ -312,7 +325,6 @@ function myportInfo(code, name) {
         success: function (response) {
             if (response['result'] == 'success') {
                 let stock_data = response['stock_data']
-                $('#myport_info').empty();
                 let {Amount, CurJuka, Debi, DownJuka, DungRak, FaceJuka, High52, HighJuka, Low52, LowJuka, Per, PrevJuka, StartJuka, UpJuka, Volume} = stock_data['stock_data'][1];
                 //let {mesuJan0, mesuHoka0, mesuJan1, mesuHoka1, mesuJan2, mesuHoka2, mesuJan3, mesuHoka3, mesuJan4, mesuHoka4,medoJan0,medoHoka0,medoJan1,medoHoka1,medoJan2,medoHoka2,medoJan3,medoHoka3,medoJan4,medoHoka4} = stock_data['stock_data'][2]
                 let {myNowTime, myJangGubun, kospiJisu, kospiBuho, kospiDebi, kosdaqJisu, kosdaqJisuBuho, kosdaqJisuDebi, kospi200Jisu, kospi200Buho, kospi200Debi} = stock_data['stock_data'][2];
@@ -379,15 +391,16 @@ function myportInfo(code, name) {
                     debiPerc = '0.00%';
                 }
 
+                $('#myport_info').empty();
                 temphtml = `
                             <table class="width_95perc" style="text-align: center;">
                                 <tbody>
                                     <tr style="border-bottom: 1px solid">
                                         <th class="font_big" style="padding: 10px 0px"><div style="display: inline-block">${name} </div><div style="display: inline-block">( ${code} )</div></th>
-                                        <th>${myNowTime} ${myJangGubun}</th>
+                                        <th><div style="display: inline-block">${myNowTime} </div><div style="display: inline-block"> ${myJangGubun}</div></th>
                                     </tr>
                                     <tr>
-                                        <th rowspan="2" class="font_color_${DungRak} font_big"><div class="big_font" style="display: inline-block">${CurJuka}</div> ${Debi} (${debiPerc})</th>
+                                        <th rowspan="2" class="font_color_${DungRak} font_big"><div class="font_Lbig" style="display: inline-block">${CurJuka}</div> ${Debi} (${debiPerc})</th>
                                         <th><div style="display: inline-block">시가 ${StartJuka} / </div><div style="display: inline-block">고가 ${HighJuka} / </div><div style="display: inline-block">저가 ${LowJuka}</div></th>
                                     </tr>
                                     <tr>

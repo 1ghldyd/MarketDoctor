@@ -35,16 +35,12 @@
 </head>
 <body>
 <header>
-    <nav class="flex_row_space_between">
+    <nav class="flex_row_space_between" style="width: 100%">
         <div id="title">MarketDoctor</div>
-        <div class="blank_width_50px"> </div>
-        <div class="flex_row_space_between">
-            <div class="blank_width_50px"> </div>
-            <div id="nav_buttonbox">
-                <button type="button" class="btn btn-light btn-sm" id="button_signin"
-                        onclick="loginButtonToggle($('#button_signin').text())">로그인</button>
-                <button type="button" class="btn btn-light btn-sm" id="button_signup" onclick="openRegisterLayer()">회원가입</button>
-            </div>
+        <div id="nav_buttonbox">
+            <button type="button" class="btn btn-light btn-sm" id="button_signin"
+                    onclick="loginButtonToggle($('#button_signin').text())">로그인</button>
+            <button type="button" class="btn btn-light btn-sm" id="button_signup" onclick="openRegisterLayer()">회원가입</button>
         </div>
     </nav>
 </header>
@@ -177,8 +173,8 @@
     <div id="welcome_text">로그인이 필요한 서비스입니다.</div>
     <div id="myconfig">
         <div>
-            <h5>E-mail 주소 : <span id="user_id"></span></h5>
-            <h6>E-mail 알람 조건 : <span id="notice_rate"></span></h6>
+            <div>E-mail 주소 : <span id="user_id"></span></div>
+            <div>알람 조건 : <span id="notice_rate"></span></div>
         </div>
         <!--
         <div class="min_width" onclick="myconfigModify()">수정하기</div>
@@ -188,11 +184,11 @@
     <div id="mycontent">
         <div class="flex_column info_box" id="myport_list">
             <div class="flex_row_space_between width_95perc padding_TB_10px">
-                <button type="button" class="btn btn-light btn-sm" id="myportUpdateButton" style="margin-bottom:3px" onclick="openmyportLayer()">
+                <button type="button" class="btn btn-light btn-sm" id="myportUpdateButton" onclick="openmyportLayer()">
                     종목 추가/수정
                 </button>
-                <div id="myNowTime" style="display: inline-block; font-size: small"></div>
-                <button type="button" class="btn btn-light btn-sm" id="myportReadButton" style="margin-bottom:3px" onclick="myportRefresh()">
+                <div class="padding_TB_10px" id="myNowTime" style="display: inline-block"></div>
+                <button type="button" class="btn btn-light btn-sm" id="myportReadButton" onclick="myportRefresh()">
                     새로고침
                 </button>
             </div>
@@ -215,7 +211,7 @@
             </div>
         </div>
         <div class="info_box flex_column" id="myport_info" style="text-align: center">
-            <br/><br/>주식 종목 상세 정보<br/><br/>리스트의 주식 종목을 클릭하시면, 상세 정보를 볼 수 있습니다.<br/><br/><br/>
+            <br/><br/>주식 종목 상세 정보<br/><br/>리스트의 주식 종목을 클릭하시면,<br/>상세 정보를 볼 수 있습니다.<br/><br/><br/>
         </div>
     </div>
 </div>

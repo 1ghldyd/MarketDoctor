@@ -51,16 +51,15 @@ nav {
 }
 
 #nav_buttonbox {
-    padding-left: 5px;
-    margin-left: 2%;
-    /*margin-right: 2%;*/
+    /*padding-left: 5px;
+    margin-left: 2%;*/
+    margin-right: 2%;
 }
 
 .blank_width_50px {
     flex-grow:10;
     width: 50px;
 }
-
 
 .add_layer {
     display: none;
@@ -121,7 +120,7 @@ nav {
 
 #myport_list {
     width: 35%;
-    min-width: 350px;
+    min-width: 356px;
     max-width: 600px;
     height: calc(100vh - 197px);
     align-items: center;
@@ -138,7 +137,7 @@ nav {
 
 #myport_info {
     width:60%;
-    min-width: 340px;
+    min-width: 360px;
     max-width: 1000px;
     align-items: center;
     margin-bottom: 50px;
@@ -207,6 +206,10 @@ nav {
     font-size: 1.4rem;
 }
 
+.font_Lbig {
+    font-size: 2rem;
+}
+
 .font_weight {
     font-weight: bold;
 }
@@ -219,7 +222,8 @@ nav {
 @media all and (max-width: 768px) {
     /* 모바일에 사용될 스트일 시트를 여기에 작성합니다. */
     html { font-size: 75$%; }/*62.5%*/
-    #title { font-size: 1.5rem; }
+    #title { font-size: 1.6rem; }
     #myconfig { font-size: 0.9rem; }
     #welcome_text { font-size: 1.5rem; padding: 30% 0px;}
+    #myNowTime { font-size: 0.7rem; }
 }

@@ -31,9 +31,22 @@ from email.mime.text import MIMEText
 
 from pytz import timezone
 
+from dotenv import load_dotenv
+from os import environ
+
+
+#client = MongoClient('mongodb://test:test@localhost',27017) #mongodb://test:test@localhost
+
+load_dotenv(verbose=True)
+environment = environ.get('ENVIRONMENT')
+if environment == 'local':
+    client = MongoClient('localhost',27017)
+elif environment == 'develop':
+    client = MongoClient('mongodb://test:test@localhost', 27017)
+
 app = Flask(__name__)
 
-client = MongoClient('mongodb://test:test@localhost',27017) #mongodb://test:test@localhost
+#client = MongoClient('mongodb://test:test@localhost',27017) #mongodb://test:test@localhost
 db = client.marketdoctor
 
 SECRET_KEY = '!r1l1a1x2o2g3k3s3'  # JWT 토큰을 만들 때 필요한 비밀문자열입니다.
