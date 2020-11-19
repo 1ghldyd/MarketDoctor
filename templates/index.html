@@ -35,7 +35,7 @@
 </head>
 <body>
 <header>
-    <nav class="flex_row_space_between" style="width: 100%">
+    <nav class="flex_row_space_between">
         <div id="title">MarketDoctor</div>
         <div id="nav_buttonbox">
             <button type="button" class="btn btn-light btn-sm" id="button_signin"
@@ -170,7 +170,15 @@
     <!--
     <img id="mainimg" src="{{ url_for('static', filename = 'main.jpg') }}" alt=""/>
     -->
-    <div id="welcome_text">로그인이 필요한 서비스입니다.</div>
+    <div id="welcome_text">
+        <div id="welcome_text_1">MarketDoctor는 주식 정보를</div> <div id="welcome_text_1">제공하는 웹서비스 입니다.</div><br/><br/>
+        <div id="welcome_text_2">개인 관심 주식 종목을 등록하여,</div> <div id="welcome_text_2">한 눈에 증시 상황을 확인하실 수 있으며,</div><br/>
+        <div id="welcome_text_2">주가 정보를 메일로 받아보실 수도 있습니다.</div><br/><br/><br/>
+        <div id="welcome_text_2">본 서비스를 이용하시려면 로그인이 필요하며,</div> <div id="welcome_text_2">회원 가입에 개인정보를 요청하지 않습니다.</div><br/><br/>
+        <div id="welcome_text_3">인터넷익스플로러(ie)는 지원하지 않습니다.</div><br/>
+        <div id="welcome_text_3">Edge, Chrome, Safari, 웨일 브라우저 등을 사용 해 주세요.</div><br/><br/>
+        <div id="welcome_text_3">MarketDoctor는 PC, 모바일 환경에서 모두 이용 가능합니다.</div>
+    </div>
     <div id="myconfig">
         <div>
             <div>E-mail 주소 : <span id="user_id"></span></div>
@@ -184,7 +192,7 @@
 </div>
 <div>
     <div id="search_box" onmouseleave="closeSearchLayer()" style="display: none">
-        <div class="input-group" id="search_input" style="width: 50vw">
+        <div class="input-group" id="search_input">
             <input type="text" class="form-control" id="button_search" onfocus="getFocus()" onmouseover="getFocus()">
             <div class="input-group-append">
                 <button class="btn btn-outline-light" type="button" onclick="stockSearch()">검색</button>
@@ -192,7 +200,7 @@
         </div>
         <div id="search_result_layer">
             <div id="search_result_box">
-                <table class="table float_center" style="text-align: center; border-collapse:collapse;">
+                <table class="table float_center" style="text-align: center; border-collapse:collapse; border-spacing:0px;">
                     <tbody id="search_result"></tbody>
                 </table>
             </div>
@@ -225,7 +233,7 @@
             </div>
         </div>
         <div class="info_box flex_column" id="myport_info" style="text-align: center">
-            <div><br/><br/>주식 종목 상세 정보<br/><br/>리스트의 주식 종목을 클릭하시면, <div style="display: inline-block">상세 정보를 볼 수 있습니다.</div><br/><br/></div>
+            <div><br/><br/>[ 주식 종목 상세 정보창 ]<br/><br/>리스트의 주식 종목을 클릭하시면, <div style="display: inline-block">상세 정보를 볼 수 있습니다.</div><br/><br/></div>
         </div>
     </div>
 </div>

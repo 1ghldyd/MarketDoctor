@@ -698,11 +698,8 @@ def job_scheduled():
 def job():
     get_my_stock()
 
-if __name__ == '__main__':
-    #stock_save()
-    app.run('0.0.0.0', port=5000, debug=True)
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
     '''
     fmt = "%Y-%m-%d %H:%M:%S %Z%z"
     UTC = datetime.now(timezone('UTC'))
@@ -713,7 +710,6 @@ if __name__ == '__main__':
     print(KST.strftime(fmt))
     print(datetime.now())
     '''
-'''
     sched = BackgroundScheduler(daemon=True, timezone="Asia/Seoul")
     sched.start()
 
@@ -728,7 +724,7 @@ if __name__ == '__main__':
     sched.add_job(stock_save, 'cron', hour='12', minute='30', id="stock_save")
 
     app.run('0.0.0.0', port=5000, debug=True)
-'''
+
 '''
 def find():
     finded = list(db.user.find({'port.code':'035420', 'notice_rate_down':{'$lte':-5}}, {'_id': False, 'id':False, 'pw':False,'port':False}))
@@ -752,11 +748,12 @@ def time_calc():
 
 
 if __name__ == '__main__':
-   #find()
-   #send()
-   #time_calc()
-   #job_scheduled()
-   #get_my_stock()
-   #run()
-   #app.run('0.0.0.0',port=5000,debug=True)
+    #find()
+    #send()
+    #time_calc()
+    #job_scheduled()
+    #get_my_stock()
+    #run()
+    stock_save()
+    #app.run('0.0.0.0',port=5000,debug=True)
 '''

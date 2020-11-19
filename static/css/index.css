@@ -32,6 +32,7 @@ body {
     font-size: 1rem;
     color: azure;
     height: 100vh;
+    width: 100vw;
     background-image: url('/static/main.jpg');
     /*background-repeat: no-repeat;
     background-position: center;
@@ -91,10 +92,18 @@ nav {
 
 #welcome_text {
     position: relative;
-    padding: 20% 0px;
+    width: 100vw;
+    height: 100vh;
+    margin: 0px auto;
+    padding: 20vh 0px;
+    /*padding: 20% 0px;*/
     text-align: center;
-    font-size: 2rem;
 }
+#welcome_text_1 { font-size: 2rem; display: inline-block; }
+#welcome_text_2 { font-size: 1.1rem; display: inline-block; }
+#welcome_text_3 { font-size: 0.9rem; display: inline-block; }
+
+
 
 #myconfig {
     display: none;
@@ -111,7 +120,7 @@ nav {
     align-items: flex-start;
     height: 80vh;
     width: 100%;
-    padding: 1%;
+    padding: 3%;
     position: relative;
     top: 40px;
 }
@@ -123,10 +132,9 @@ nav {
 #myport_list {
     width: 35%;
     min-width: 356px;
-    max-width: 800px;
-    height: calc(100vh - 197px);
+    max-width: 900px;
+    max-height: calc(100vh - 270px);
     align-items: center;
-    margin-bottom: 50px;
 }
 
 .margin_TB_10px {
@@ -142,9 +150,9 @@ nav {
 #myport_info {
     width:60%;
     min-width: 360px;
-    max-width: 1000px;
+    max-width: 1100px;
     align-items: center;
-    padding-bottom: 50px;
+    padding-bottom: 15px;
 }
 
 .float_center {
@@ -190,54 +198,37 @@ nav {
     flex-direction: column;
 }
 
-.font_color_1 {
-    color: red;
-}
+.font_color_1 {color: red;}
+.font_color_2 {color: red;}
+.font_color_4 {color: dodgerblue;}
+.font_color_5 {color: dodgerblue;}
+.font_big {font-size: 1.4rem;}
+.font_Lbig {font-size: 2rem;}
+.font_weight {font-weight: bold;}
 
-.font_color_2 {
-    color: red;
-}
-
-.font_color_4 {
-    color: dodgerblue;
-}
-
-.font_color_5 {
-    color: dodgerblue;
-}
-
-.font_big {
-    font-size: 1.4rem;
-}
-
-.font_Lbig {
-    font-size: 2rem;
-}
-
-.font_weight {
-    font-weight: bold;
-}
-
-#myport_info th,tr {
-    padding: 5px;
-}
+#myport_info th,tr {padding: 5px;}
 
 #search_box {
     position: absolute;
-    right: 25vw;
-    margin: 0.5% 0px;
+    left: 25%;
+    margin-top: 1.65%;
     height: 50vh;
+    width: 50%;
 }
 
 #search_input {
     z-index: 990;
 }
-
+/*
+#button_search {
+    width: calc(100%-58px);
+}
+*/
 #search_result_layer {
     display: none;
     position: relative;
     width: 100%;
-    height: calc(40vh + 20px);
+    height: calc(40vh + 26px);
     z-index: 989;
     background-color: rgba(255, 255, 255, 0.9);
     top:-5px;
@@ -248,7 +239,6 @@ nav {
     color: black;
     font-weight: bold;
     height: 40vh;
-    width: 50vw;
     overflow: auto;
 }
 
@@ -256,33 +246,46 @@ nav {
     color: black;
     font-size: 0.8rem;
     text-align: right;
-    padding: 0px 2px 5px 0px;
+    padding: 0px 5px 5px 0px;
 }
 
-/*(min-width:768px)*/
-@media (min-width:926px) and (max-width:1300px){
-    #myNowTime { font-size: 0.7rem; }
-}
 
-@media (min-width:500px) and (max-width:925px){
-    #myNowTime { font-size: 1rem; }
-}
-
-@media all and (max-width:499px){
-    #myNowTime { font-size: 0.7rem; }
-}
-
-@media all and (max-width:925px){
-    #myport_list{width:calc(100vw);}
-    #myport_info{width:calc(100vw);}
-}
 
 @media all and (max-width: 768px) {
     /* 모바일에 사용될 스트일 시트를 여기에 작성합니다. */
-    html { font-size: 75$%; }/*62.5%*/
-    #title { font-size: 1.6rem; }
-    #myconfig { font-size: 0.9rem; }
-    #welcome_text { font-size: 1.5rem; padding: 30% 0px;}
-    #myport_list {margin-bottom: 100px;}
+    html{font-size: 75$%}/*62.5%*/
+    #title{font-size: 1.6rem}
+    #welcome_text{padding: 5vh 5vw;}
+    #welcome_text_1 { font-size: 1.5rem; }
+    #welcome_text_2 { font-size: 0.9rem; }
+    #welcome_text_3 { font-size: 0.8rem; }
+    #myconfig{font-size: 0.9rem}
+    #myport_list{margin-bottom: 50px}
+    .mobile_font1{font-size: 0.8rem}
+    .mobile_font2{font-size: 0.7rem; width:15%;}
+    #search_result tr { line-height: 8px; }
+    #myport_list{min-height: calc(100vh - 160px);}
+    #myport_list tr { line-height: 16px; }
 }
 
+
+@media all and (max-width:946px){
+    #myport_list{width:100vw; margin-bottom: 20px;}
+    #myport_info{width:100vw; padding-bottom: 50px;}
+    #search_box{width: 80vw; left: 10vw;} /*{width: 90vw; right: 5vw}*/
+    #search_result_box{width: 80vw}
+}
+
+
+@media all and (max-width:500px){
+    #myNowTime { font-size: 0.7rem; }
+}
+
+@media (min-width:501px) and (max-width:946px){
+    #myNowTime { font-size: 1rem; }
+}
+
+/*(min-width:768px)*/
+@media (min-width:947px) and (max-width:1350px){
+    #myNowTime { font-size: 0.7rem; }
+}

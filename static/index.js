@@ -131,7 +131,7 @@ function logined() {
     $('#myport_box').empty();
     myconfigGet();
     myportRefresh();
-    window.scrollTo({top:0, behavior:'auto'});
+    mobile_check_scroll_move_top();
 }
 
 function logout() {
@@ -243,6 +243,7 @@ function saveMyConfig() {
                     let msg = response['msg'];
                     alert(msg);
                     closeconfiglayer();
+                    mobile_check_scroll_move_top();
                     myconfigGet();
                 } else {
                     let msg = response['msg'];
@@ -329,16 +330,7 @@ function myportRefresh() {
 }
 
 function myportInfo(code, name) {
-    let filter = "win16|win32|win64|mac";
-    if(navigator.platform){
-        if(0 > filter.indexOf(navigator.platform.toLowerCase())){
-            //alert("Mobile");
-            //window.scrollTo({top:0, behavior:'auto'});
-            window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
-        }else{
-            //alert("PC");
-        }
-    }
+    mobile_check_scroll_move_bottom()
 
     $.ajax({
         type: "GET",
@@ -349,11 +341,11 @@ function myportInfo(code, name) {
             if (response['result'] == 'success') {
                 let state = response['state']
                 if (state > 10) {
-                    $('#myport_info').html('<br/><br/>잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다.<br/><span style="color: indianred">서버 접속량이 많아 조회가 지연되고 있습니다.</span><br/><br/><br/>');
+                    $('#myport_info').html('<br/><br/>잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다.<br/><span style="color: indianred">서버 접속량이 많아 조회가 지연되고 있습니다.</span><br/><br/>');
                 } else if (state > 60) {
-                    $('#myport_info').html('<br/><br/><span style="color: indianred">서버 접속량이 매우 많아 지금은 조회가 어렵습니다.<br/>잠시 후 다시 조회 해 주세요.</span><br/><br/><br/>');
+                    $('#myport_info').html('<br/><br/><span style="color: indianred">서버 접속량이 매우 많아 지금은 조회가 어렵습니다.<br/>잠시 후 다시 조회 해 주세요.</span><br/><br/>');
                 } else {
-                    $('#myport_info').html('<br/><br/>잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다.<br/><br/><br/>');
+                    $('#myport_info').html('<br/><br/>잠시만 기다려 주세요.<br/>종목 정보를 받아오고 있습니다.<br/><br/>');
                 }
             }
         }
@@ -632,6 +624,7 @@ function addMyport(code) {
                     alert(msg);
                     $('#input_code').val("")
                     showMyportRefresh();
+                    mobile_check_scroll_move_top();
                 } else if (response['result'] == 'fail') {
                     let msg = response['msg'];
                     alert(msg);
@@ -695,9 +688,9 @@ function stockSearch() {
                         }
                     }
                     let temphtml = `<tr>
-                                       <td>${name}(${code})</td>
-                                       <td><a href="#" onclick="myportInfoClick('${code}','${name}')" class="card-footer-item has-text-danger">상세 정보 보기<span class="icon"><i class="fas fa-ban"></i></span></a></td>
-                                       <td><a href="#" onclick="addMyportClick('${code}')" class="card-footer-item has-text-danger">리스트 추가<span class="icon"><i class="fas fa-ban"></i></span></a></td>
+                                       <td class="mobile_font1">${name}(${code})</td>
+                                       <td class="mobile_font2"><a href="#" onclick="myportInfoClick('${code}','${name}')"><div style="display: inline-block">정보</div> <div style="display: inline-block">보기</div></a></td>
+                                       <td class="mobile_font2"><a href="#" onclick="addMyportClick('${code}')"><div style="display: inline-block">종목</div> <div style="display: inline-block">추가</div></a></td>
                                    </tr>`;
                     $('#search_result').append(temphtml);
                     openSearchLayer();
@@ -712,12 +705,15 @@ function stockSearch() {
 function myportInfoClick(code,name) {
     myportInfo(code,name)
     closeSearchLayer()
+    mobile_check_scroll_move_bottom()
 }
 
 function addMyportClick(code) {
     addMyport(code)
     closeSearchLayer()
-    myportRefresh()
+    setTimeout(function(){
+        myportRefresh()
+    }, 100);//0.1초
 }
 
 function getFocus() {
@@ -735,6 +731,40 @@ function openSearchLayer() {
 function closeSearchLayer() {
     document.getElementById("search_result_layer").style.display = 'none';
 }
+
+function mobile_check_scroll_move_bottom() {
+    //document.getElementById("title").focus();
+    let filter = "win16|win32|win64|mac";
+    if (navigator.platform) {
+        if (0 > filter.indexOf(navigator.platform.toLowerCase())) {
+            //alert("Mobile");
+            //window.scrollTo({top:0, behavior:'auto'});
+            setTimeout(function(){
+                window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
+            }, 100);//0.1초
+        } else {
+            //alert("PC");
+        }
+    }
+}
+
+function mobile_check_scroll_move_top() {
+    //document.getElementById("title").focus();
+    let filter = "win16|win32|win64|mac";
+    if (navigator.platform) {
+        if (0 > filter.indexOf(navigator.platform.toLowerCase())) {
+            //alert("Mobile");
+            //window.scrollTo({top:0, behavior:'auto'});
+            setTimeout(function(){
+                window.scrollTo({top:0, behavior:'auto'});
+            }, 100);//0.1초
+        } else {
+            //alert("PC");
+        }
+    }
+}
+
+
 /*
 function search_enter() {
     document.addEventListener("keyup", function(e) {
