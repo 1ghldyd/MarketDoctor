@@ -70,7 +70,7 @@ nav {
     width: 100%;
     top: 0px;
     z-index: 999;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.9);
 }
 
 .add_layer_form {
@@ -93,7 +93,7 @@ nav {
 #welcome_text {
     position: relative;
     width: 100vw;
-    height: 100vh;
+    height: calc(100vh-74px);
     margin: 0px auto;
     padding: 20vh 0px;
     /*padding: 20% 0px;*/

@@ -713,7 +713,7 @@ function addMyportClick(code) {
     closeSearchLayer()
     setTimeout(function(){
         myportRefresh()
-    }, 100);//0.1초
+    }, 800);//0.2초
 }
 
 function getFocus() {

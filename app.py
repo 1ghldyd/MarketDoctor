@@ -304,8 +304,7 @@ def myport_add():
     if user is not None:
         user_data = db.user.find_one({'id': user['id']}, {'_id': 0})
         add_code = request.form['code']
-
-        if any(add_code in code for code in user_data['port']):
+        if any(add_code in code['code'] for code in user_data['port']):
             return jsonify({'result': 'success', 'msg': '해당 종목은 이미 등록되어 있습니다!'})
         else:
             port_info = get_stock(add_code)
@@ -700,25 +699,26 @@ def job():
 
 
 if __name__ == "__main__":
-    '''
-    fmt = "%Y-%m-%d %H:%M:%S %Z%z"
-    UTC = datetime.now(timezone('UTC'))
-    KST = datetime.now(timezone('Asia/Seoul'))
-    print(UTC)
-    print(KST)
-    print(UTC.strftime(fmt))
-    print(KST.strftime(fmt))
-    print(datetime.now())
-    '''
+
+    #fmt = "%Y-%m-%d %H:%M:%S %Z%z"
+    #UTC = datetime.now(timezone('UTC'))
+    #KST = datetime.now(timezone('Asia/Seoul'))
+    #print(UTC)
+    #print(KST)
+    #print(UTC.strftime(fmt))
+    #print(KST.strftime(fmt))
+    #print(datetime.now())
+
+
     sched = BackgroundScheduler(daemon=True, timezone="Asia/Seoul")
     sched.start()
 
-    starttime = datetime.now() + timedelta(seconds=6)
+    starttime = datetime.now() + timedelta(seconds=15)
     hour = starttime.hour
     minute = starttime.minute
     second = starttime.second
     sched.add_job(run, 'cron', hour=hour, minute=minute, second=second, id="check_stock_send_email")
-    sleep(10)
+    sleep(20)
     sched.remove_job('check_stock_send_email')
     sched.add_job(run, 'cron', hour='9', minute='0', id="check_stock_send_email")
     sched.add_job(stock_save, 'cron', hour='12', minute='30', id="stock_save")
@@ -753,7 +753,8 @@ if __name__ == '__main__':
     #time_calc()
     #job_scheduled()
     #get_my_stock()
-    #run()
-    stock_save()
+    run()
+    #stock_save()
     #app.run('0.0.0.0',port=5000,debug=True)
+
 '''
