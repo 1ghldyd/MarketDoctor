@@ -24,6 +24,7 @@ function valid_check() {
                 document.getElementById("welcome_text").style.display = 'none';
                 document.getElementById("myconfig").style.display = 'flex';
                 document.getElementById("mycontent").style.display = 'flex';
+                document.getElementById("search_box").style.display = 'block';
             } else {
                 alert(response['msg']);
             }
@@ -665,7 +666,11 @@ function delMyport(code, name) {
 }
 
 function stockSearch() {
-    //let search = $('#button_search').val()
+    $('#search_result').empty()
+    if ($('#button_search').val() == "") {
+        document.getElementById("button_search").focus();
+        return false;
+    }
     $.ajax({
         type: 'POST',
         url: '/api/search',
@@ -674,23 +679,79 @@ function stockSearch() {
         success: function (response) {
             if (response['result'] == 'success') {
                 let search_result = response['search'];
-                console.log(search_result)
+                //console.log(search_result)
                 for (let i = 0; i < search_result.length; i++) {
-                    let code = search_result[i][1].toString()
+                    let code = search_result[i]['code'].toString()
+                    let name = search_result[i]['name']
                     if (code.length < 6) {
-                        for (let j = 0; j < (7 - code.length); j++) {
+                        let ij = 6 - code.length
+                        for (let j = 0; j < ij; j++) {
                             code = '0' + code
                         }
                     }
                     let temphtml = `<tr>
-                                       <td>${search_result[i][0]}</td>
-                                       <td>${code}</td>
-                                       <td><a href="#" onclick="myportInfo('${code}','${search_result[i][0]}')" class="card-footer-item has-text-danger">바로보기<span class="icon"><i class="fas fa-ban"></i></span></a></td>
-                                       <td><a href="#" onclick="addMyport('${code}')" class="card-footer-item has-text-danger">등록하기<span class="icon"><i class="fas fa-ban"></i></span></a></td>
+                                       <td>${name}(${code})</td>
+                                       <td><a href="#" onclick="myportInfoClick('${code}','${name}')" class="card-footer-item has-text-danger">상세 정보 보기<span class="icon"><i class="fas fa-ban"></i></span></a></td>
+                                       <td><a href="#" onclick="addMyportClick('${code}')" class="card-footer-item has-text-danger">리스트 추가<span class="icon"><i class="fas fa-ban"></i></span></a></td>
                                    </tr>`;
                     $('#search_result').append(temphtml);
+                    openSearchLayer();
                 }
+                document.getElementById("search_result_box").focus();
             }
         }
     });
 }
+
+function myportInfoClick(code,name) {
+    myportInfo(code,name)
+    closeSearchLayer()
+}
+
+function addMyportClick(code) {
+    addMyport(code)
+    closeSearchLayer()
+    myportRefresh()
+}
+
+function getFocus() {
+    if ($('#search_result').text() == ''){
+        document.getElementById("search_result_layer").style.display = 'none';
+    } else {
+        document.getElementById("search_result_layer").style.display = 'block';
+    }
+}
+
+function openSearchLayer() {
+    document.getElementById("search_result_layer").style.display = 'block';
+}
+
+function closeSearchLayer() {
+    document.getElementById("search_result_layer").style.display = 'none';
+}
+/*
+function search_enter() {
+    document.addEventListener("keyup", function(e) {
+        if (e.keyCode === 13) {
+            stockSearch();
+        }
+    });
+}
+
+function login_enter() {
+    document.addEventListener("keyup", function(e) {
+        console.log(e.keyCode)
+        if (e.keyCode === 13) {
+            login();
+        }
+    });
+}
+
+function register_enter() {
+    document.addEventListener("keyup", function(e) {
+        if (e.keyCode === 13) {
+            register();
+        }
+    });
+}
+ */

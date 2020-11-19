@@ -34,7 +34,6 @@ from pytz import timezone
 from dotenv import load_dotenv
 from os import environ
 
-
 #client = MongoClient('mongodb://test:test@localhost',27017) #mongodb://test:test@localhost
 
 load_dotenv(verbose=True)
@@ -170,15 +169,14 @@ def myport_refresh():
                 ports.append({'code':port['code'], 'name':port['name'], 'current_price':port_info['price'], 'debi':port_info['debi'], 'rate':port_info['rate'], 'volume':port_info['volume']})
             return jsonify({'result': 'success', 'ports_data': ports})
             '''
-            #for index, sList in enumerate(ports_data):
 
             with get_stock_cur_data_lock:
                 global get_stock_cur_data
                 get_stock_cur_data = []
 
             start_time = time.time()
-            ts = [Thread(target=get_stock_cur, args=(port_data, 1), daemon=True)
-                  for port_data in ports_data]
+            ts = [Thread(target=get_stock_cur, args=(index, sList, 1), daemon=True)
+                  for index, sList in enumerate(ports_data)]
             for t in ts:
                 t.start()
             for t in ts:
@@ -186,6 +184,9 @@ def myport_refresh():
             global duration
             duration = time.time() - start_time
             print(f"Downloaded current stock data {len(ports_data)} in {duration} seconds")
+
+            with get_stock_cur_data_lock:
+                get_stock_cur_data = sorted(get_stock_cur_data, key=lambda x: x['sort'])
             return jsonify({'result': 'success', 'ports_data': get_stock_cur_data})
         else:
             return jsonify({'result': 'success_but', 'msg': '등록된 종목이 없습니다.<br/><br/>주식 종목을 추가 해 주세요.'})
@@ -360,7 +361,7 @@ def get_stock(code):
     return ({'code': code, 'name': name})
 
 
-def get_stock_cur(port_data, try_cnt):
+def get_stock_cur(index, port_data, try_cnt):
     with pool_sema:
         try:
             headers = {
@@ -388,7 +389,7 @@ def get_stock_cur(port_data, try_cnt):
                 with get_stock_cur_data_lock:
                     global get_stock_cur_data
                     get_stock_cur_data.append(
-                        {'code': port_data['code'], 'name': port_data['name'], 'current_price': cur_juka, 'debi': debi,
+                        {'sort': index ,'code': port_data['code'], 'name': port_data['name'], 'current_price': cur_juka, 'debi': debi,
                          'rate': rate, 'volume': volume, 'myJangGubun': myJangGubun, 'myNowTime': myNowTime,
                          'DungRak': DungRak})
 
@@ -398,7 +399,7 @@ def get_stock_cur(port_data, try_cnt):
                 print('강제종료-네트워크 지연')
                 return None
             else:
-                get_stock_cur(code, try_cnt=+1)
+                get_stock_cur(index, port_data, try_cnt=+1)
 
         except HTTPError as e:
             print(e)
@@ -406,7 +407,7 @@ def get_stock_cur(port_data, try_cnt):
                 print('강제종료-네트워크 지연')
                 return None
             else:
-                get_stock_cur(code, try_cnt=+1)
+                get_stock_cur(index, port_data, try_cnt=+1)
 
 
 def get_stock_info(code, try_cnt):
@@ -455,24 +456,24 @@ def get_stock_info(code, try_cnt):
 
 def get_my_stock():
     if db.port.find() is not None:
-        ports_data = list(db.port.find())
-        codes = []
-        for port_data in ports_data:
-            codes.append({'code': port_data['code'], 'name': port_data['name']})
+        ports_db = list(db.port.find())
+        ports_data = []
+        for port_db in ports_db:
+            ports_data.append({'code': port_db['code'], 'name': port_db['name']})
         with get_stock_cur_data_lock:
             global get_stock_cur_data
             get_stock_cur_data = []
 
         start_time = time.time()
-        ts = [Thread(target=get_stock_cur, args=(code, 1), daemon=True)
-              for code in codes]
+        ts = [Thread(target=get_stock_cur, args=(index,sList, 1), daemon=True)
+              for index, sList in enumerate(ports_data)]
         for t in ts:
             t.start()
         for t in ts:
             t.join()
         global duration
         duration = time.time() - start_time
-        print(f"Downloaded current stock data {len(ports_data)} in {duration} seconds")
+        print(f"Downloaded current stock data {len(ports_db)} in {duration} seconds")
 
         if (len(get_stock_cur_data) != 0):
             if (get_stock_cur_data[0]['myJangGubun'] == 'OnMarket'):
@@ -645,30 +646,38 @@ def server_state():
 def stock_search():
     user = token_payload_read()
     if user is not None:
+        search_keyword = request.form['search']
+        '''
         df = pd.read_html('http://kind.krx.co.kr/corpgeneral/corpList.do?method=download', header=0)[0]
         df = df.drop(df.columns[[2, 3, 4, 5, 6, 7, 8]], axis='columns')
-        print(df.head(1))
+        df = df.rename(columns={'회사명': 'name', '종목코드': 'code'})
+        df = df[df['name'].str.contains(search_keyword)]
+        search_db = df.values.tolist() # Convert Pandas DataFrame into a List
+        return jsonify({'result': 'success', 'search': search_db})
         '''
-        df.reset_index(inplace=True)
-        db_df = df.to_dict("records")
-        db.stock.remove()
-        db.stock.insert_many(db_df)
-        
-        
-        user_data = db.user.find_one({'id': user['id']}, {'_id': False})
-        delete_code = request.form['code']
-        '''
-        search_keyword = request.form['search']
-        print(search_keyword)
-        df = df[df['회사명'].str.contains(search_keyword)]
-        print(df)
-        search_value = df.values.tolist()
-        print(search_value)
-        return jsonify({'result': 'success', 'search': search_value})
+        search_db = list(db.stock.find({},{'_id': False, 'index': False}))
+        indexs = []
+        search_result = []
+        for index, sList in enumerate(search_db):
+            if search_keyword in sList['name']:
+                indexs.append(index)
+        for i in indexs:
+            search_result.append(search_db[i])
+        return jsonify({'result': 'success', 'search': search_result})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
 
+def stock_save():
+    df = pd.read_html('http://kind.krx.co.kr/corpgeneral/corpList.do?method=download', header=0)[0]
+    df = df.drop(df.columns[[2, 3, 4, 5, 6, 7, 8]], axis='columns')
+    df = df.rename(columns={'회사명': 'name', '종목코드': 'code'})
+
+    df.reset_index(inplace=True)
+    db_df = df.to_dict("records")
+    db.stock.remove()
+    db.stock.insert_many(db_df)
+    print('stock_save complete')
 
 
 def run():
@@ -688,11 +697,12 @@ def job_scheduled():
 
 def job():
     get_my_stock()
-'''
+
 if __name__ == '__main__':
-   stock_search()
-'''
-if __name__ == "__main__":
+    #stock_save()
+    app.run('0.0.0.0', port=5000, debug=True)
+
+#if __name__ == "__main__":
     '''
     fmt = "%Y-%m-%d %H:%M:%S %Z%z"
     UTC = datetime.now(timezone('UTC'))
@@ -703,6 +713,7 @@ if __name__ == "__main__":
     print(KST.strftime(fmt))
     print(datetime.now())
     '''
+'''
     sched = BackgroundScheduler(daemon=True, timezone="Asia/Seoul")
     sched.start()
 
@@ -714,8 +725,10 @@ if __name__ == "__main__":
     sleep(10)
     sched.remove_job('check_stock_send_email')
     sched.add_job(run, 'cron', hour='9', minute='0', id="check_stock_send_email")
+    sched.add_job(stock_save, 'cron', hour='12', minute='30', id="stock_save")
 
     app.run('0.0.0.0', port=5000, debug=True)
+'''
 '''
 def find():
     finded = list(db.user.find({'port.code':'035420', 'notice_rate_down':{'$lte':-5}}, {'_id': False, 'id':False, 'pw':False,'port':False}))

@@ -97,13 +97,13 @@
         <div class="add_layer_form">
             <div class="input-group mb-3">
                 <div class="input-group-prepend">
-                    <span class="input-group-text" id="basic-addon1">이메일 주소</span>
+                    <span class="input-group-text">이메일 주소</span>
                 </div>
                 <input type="email" class="form-control" id="useremail" placeholder="아이디(이메일 주소)">
             </div>
             <div class="input-group mb-3">
                 <div class="input-group-prepend">
-                    <span class="input-group-text" id="basic-addon1">상승 알림</span>
+                    <span class="input-group-text">상승 알림</span>
                 </div>
                 <input type="number" class="form-control" id="notice_rate_up"
                        title="% 또는 금액 기준의 설정 수치 이상으로 변 시 알림 메일이 발송됩니다.">
@@ -113,7 +113,7 @@
             </div>
             <div class="input-group mb-3">
                 <div class="input-group-prepend">
-                    <span class="input-group-text" id="basic-addon1">하락 알림</span>
+                    <span class="input-group-text">하락 알림</span>
                 </div>
                 <input type="number" class="form-control" id="notice_rate_down">
                 <div class="input-group-append">
@@ -181,6 +181,24 @@
         -->
         <button type="button" class="btn btn-light btn-sm" onclick="myconfigModify()">수정하기</button>
     </div>
+</div>
+<div>
+    <div id="search_box" onmouseleave="closeSearchLayer()" style="display: none">
+        <div class="input-group" id="search_input" style="width: 50vw">
+            <input type="text" class="form-control" id="button_search" onfocus="getFocus()" onmouseover="getFocus()">
+            <div class="input-group-append">
+                <button class="btn btn-outline-light" type="button" onclick="stockSearch()">검색</button>
+            </div>
+        </div>
+        <div id="search_result_layer">
+            <div id="search_result_box">
+                <table class="table float_center" style="text-align: center; border-collapse:collapse;">
+                    <tbody id="search_result"></tbody>
+                </table>
+            </div>
+            <div class="close_search_result_box" id="button_close_search_result_box" onclick="closeSearchLayer()">닫기</div>
+        </div>
+    </div>
     <div id="mycontent">
         <div class="flex_column info_box" id="myport_list">
             <div class="flex_row_space_between width_95perc margin_TB_10px" id="myport_list_top">
@@ -208,19 +226,6 @@
         </div>
         <div class="info_box flex_column" id="myport_info" style="text-align: center">
             <div><br/><br/>주식 종목 상세 정보<br/><br/>리스트의 주식 종목을 클릭하시면, <div style="display: inline-block">상세 정보를 볼 수 있습니다.</div><br/><br/></div>
-        </div>
-        <div>
-            <div class="input-group mb-3">
-                <input type="text" class="form-control" id="button_search">
-                <div class="input-group-append">
-                    <button class="btn btn-outline-secondary" type="button" onclick="stockSearch()">Button</button>
-                </div>
-            </div>
-            <div id="search_result_box">
-                <table class="table float_center" style="text-align: center; border-collapse:collapse;">
-                    <tbody id="search_result"></tbody>
-                </table>
-            </div>
         </div>
     </div>
 </div>

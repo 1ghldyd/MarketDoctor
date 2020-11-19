@@ -112,6 +112,8 @@ nav {
     height: 80vh;
     width: 100%;
     padding: 1%;
+    position: relative;
+    top: 40px;
 }
 
 .info_box {
@@ -220,11 +222,42 @@ nav {
     padding: 5px;
 }
 
+#search_box {
+    position: absolute;
+    right: 25vw;
+    margin: 0.5% 0px;
+    height: 50vh;
+}
+
+#search_input {
+    z-index: 990;
+}
+
+#search_result_layer {
+    display: none;
+    position: relative;
+    width: 100%;
+    height: calc(40vh + 20px);
+    z-index: 989;
+    background-color: rgba(255, 255, 255, 0.9);
+    top:-5px;
+
+}
+
 #search_result_box {
-    height: 500px;
+    color: black;
+    font-weight: bold;
+    height: 40vh;
+    width: 50vw;
     overflow: auto;
 }
 
+#button_close_search_result_box {
+    color: black;
+    font-size: 0.8rem;
+    text-align: right;
+    padding: 0px 2px 5px 0px;
+}
 
 /*(min-width:768px)*/
 @media (min-width:926px) and (max-width:1300px){
