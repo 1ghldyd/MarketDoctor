@@ -319,7 +319,7 @@ def myport_add():
                 if db.port.find_one({'code': add_code}, {'_id': 0}) is None:
                     db.port.insert_one({'code': add_code, 'name': port_info['name']})
 
-                return jsonify({'result': 'success', 'msg': add_code + ' 종목이 추가되었습니다!'})
+                return jsonify({'result': 'success', 'msg': port_info['name'] + '(' + add_code + ')' + ' 종목이 추가되었습니다!'})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 

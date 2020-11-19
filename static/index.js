@@ -94,7 +94,7 @@ function register() {
         $.ajax({
             type: "POST",
             url: "/api/register",
-            data: {id: $('#register_userid').val(), pw: $('#register_userpw').val()},
+            data: {'id': $('#register_userid').val(), 'pw': $('#register_userpw').val()},
             success: function (response) {
                 if (response['result'] == 'success') {
                     alert('회원가입이 완료되었습니다.');
@@ -111,7 +111,7 @@ function login() {
     $.ajax({
         type: "POST",
         url: "/api/login",
-        data: {id: $('#userid').val(), pw: $('#userpw').val()},
+        data: {'id': $('#userid').val(), 'pw': $('#userpw').val()},
         success: function (response) {
             if (response['result'] == 'success') {
                 $.cookie('mytoken', response['token']);
@@ -188,7 +188,7 @@ function myconfigModify() {
                 } else {
                     document.getElementById("notice_rate_up").placeholder = '이상값을 입력(숫자만)';
                 }
-                if (response['payload']['notice_rate_up'] !== "") {
+                if (response['payload']['notice_rate_down'] !== "") {
                     document.getElementById("notice_rate_down").placeholder = response['payload']['notice_rate_down'];
                 } else {
                     document.getElementById("notice_rate_down").placeholder = '이하값을 입력(숫자만)';
@@ -203,13 +203,14 @@ function myconfigModify() {
 }
 
 function saveMyConfig() {
+    let email, notice_rate_up, notice_rate_down
     if ($('#useremail').val() == "") {
         email = document.getElementById("useremail").placeholder;
     } else {
         email = $('#useremail').val();
     }
     if ($('#notice_rate_up').val() == "") {
-        if (Number.isInteger(document.getElementById("notice_rate_up").placeholder)) {
+        if ($.isNumeric(document.getElementById("notice_rate_up").placeholder)) {
             notice_rate_up = document.getElementById("notice_rate_up").placeholder;
         } else {
             notice_rate_up = "";
@@ -218,8 +219,8 @@ function saveMyConfig() {
         notice_rate_up = $('#notice_rate_up').val();
     }
     if ($('#notice_rate_down').val() == "") {
-        if (Number.isInteger(document.getElementById("notice_rate_down").placeholder)) {
-            notice_rate_up = document.getElementById("notice_rate_down").placeholder;
+        if ($.isNumeric(document.getElementById("notice_rate_down").placeholder)) {
+            notice_rate_down = document.getElementById("notice_rate_down").placeholder;
         } else {
             notice_rate_down = "";
         }
@@ -299,7 +300,7 @@ function myportRefresh() {
                         debi = '+' + debi;
                         rate = '+' + rate;
                     }
-                    temphtml = `<tr onclick="myportInfo('${code}','${name}')">
+                    let temphtml = `<tr onclick="myportInfo('${code}','${name}')">
                                    <td style="vertical-align: middle">${i + 1}</td>
                                    <td>${name}<br/>${code}</td>
                                    <td><span class="font_color_${DungRak} font_weight">${current_price.toLocaleString()}</span><br/>${volume.toLocaleString()}</td>
@@ -418,8 +419,8 @@ function myportInfo(code, name) {
                     kospi200Perc = ((Number(kospi200Jisu) / (Number(kospi200Jisu) + Number(kospi200Debi)) - 1) * 100).toFixed(2) + '%';
                     kospi200Debi = '-' + kospi200Debi;
                 }
-                CurJuka0 = parseInt(CurJuka.replace(",", ""));
-                PrevJuka0 = parseInt(PrevJuka.replace(",", ""));
+                let CurJuka0 = parseInt(CurJuka.replace(",", ""));
+                let PrevJuka0 = parseInt(PrevJuka.replace(",", ""));
                 let debiPerc;
                 if (DungRak == 1 || DungRak == 2) {
                     Debi = '+' + Debi;
@@ -433,7 +434,7 @@ function myportInfo(code, name) {
                 }
 
                 $('#myport_info').empty();
-                temphtml = `
+                let temphtml = `
                             <table class="width_95perc" style="text-align: center;">
                                 <tbody>
                                     <tr style="border-bottom: 1px solid">
@@ -464,7 +465,7 @@ function myportInfo(code, name) {
                 $('#myport_info').append(temphtml);
 
                 let chart_data = response['chart_data'];
-                item = JSON.parse(chart_data);
+                let item = JSON.parse(chart_data);
                 Bokeh.embed.embed_item(item, "myplot");
             } else if (response['result'] == 'success_but') {
                 let msg = response['msg'];
@@ -643,7 +644,7 @@ function addMyport(code) {
 }
 
 function delConfirm(code, name) {
-    msg = name + '(' + code + ') 종목을 삭제 하시겠습니까?';
+    let msg = name + '(' + code + ') 종목을 삭제 하시겠습니까?';
     if (confirm(msg) != 0) {
         delMyport(code, name);
     }
@@ -679,8 +680,12 @@ function stockSearch() {
         success: function (response) {
             if (response['result'] == 'success') {
                 let search_result = response['search'];
-                //console.log(search_result)
-                for (let i = 0; i < search_result.length; i++) {
+                if (search_result.length == 0) {
+                    let search_value = $('#button_search').val()
+                    $('#button_search').val("'" + search_value + "'에 대한 검색결과가 없습니다.")
+                    $('#button_search').select();
+                } else {
+                    for (let i = 0; i < search_result.length; i++) {
                     let code = search_result[i]['code'].toString()
                     let name = search_result[i]['name']
                     if (code.length < 6) {
@@ -696,6 +701,7 @@ function stockSearch() {
                                    </tr>`;
                     $('#search_result').append(temphtml);
                     openSearchLayer();
+                    }
                 }
                 document.getElementById("search_result_box").focus();
             }
