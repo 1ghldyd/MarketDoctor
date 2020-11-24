@@ -429,6 +429,8 @@ function myportInfo(code, name) {
                 } else if (DungRak == 3) {
                     Debi = '0';
                     debiPerc = '0.00%';
+                } else {
+                    debiPerc = '조회 된 데이터 없음';
                 }
 
                 $('#myport_info').empty();
