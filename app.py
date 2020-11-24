@@ -29,11 +29,12 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from pytz import timezone
+#from pytz import timezone
 
 from dotenv import load_dotenv
 from os import environ
 
+app = Flask(__name__)
 #client = MongoClient('mongodb://test:test@localhost',27017) #mongodb://test:test@localhost
 
 load_dotenv(verbose=True)
@@ -42,10 +43,6 @@ if environment == 'local':
     client = MongoClient('localhost',27017)
 elif environment == 'develop':
     client = MongoClient('mongodb://test:test@localhost', 27017)
-
-app = Flask(__name__)
-
-#client = MongoClient('mongodb://test:test@localhost',27017) #mongodb://test:test@localhost
 db = client.marketdoctor
 
 SECRET_KEY = '!r1l1a1x2o2g3k3s3'  # JWT 토큰을 만들 때 필요한 비밀문자열입니다.
@@ -64,13 +61,14 @@ def home():
 def api_register():
     id = request.form['id']
     pw = request.form['pw']
+    today = datetime.now()
     if db.user.find_one({'id': id}, {'_id': False}) is not None:
         return jsonify({'result': 'fail', 'msg': '아이디가 중복되었습니다. 다시 입력 해 주세요.'})
     else:
         pw_hash = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
         db.user.insert_one(
-            {'id': id, 'pw': pw_hash, 'email': id, 'notice_rate_up': '', 'notice_rate_down': '', 'notice_price_up': '',
-             'notice_price_down': '', 'port': []})
+            {'id': id, 'pw': pw_hash, 'email': id, 'notice_rate_up': '', 'notice_rate_down': '', 'notice_on': 'true',
+             'port': [], 'date_regsiter' : today, 'date_login' : ''})
         return jsonify({'result': 'success', 'msg': '회원가입이 완료되었습니다.'})
 
 
@@ -78,6 +76,7 @@ def api_register():
 def api_login():
     id = request.form['id']
     pw = request.form['pw']
+    today = datetime.now()
     user_data = db.user.find_one({'id': id}, {'_id': False})
     if user_data != None:
         if bcrypt.checkpw(pw.encode('utf-8'), user_data['pw']):
@@ -90,6 +89,7 @@ def api_login():
                 'exp': datetime.utcnow() + timedelta(seconds=60 * 60 * 24)  # 24시간 유효
             }
             token = jwt.encode(payload, SECRET_KEY, algorithm='HS256').decode('utf-8')
+            db.user.update_one({'id': user_data['id']}, {'$set': {'date_login': today}})
             return jsonify({'result': 'success', 'token': token})
         else:
             return jsonify({'result': 'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
@@ -117,7 +117,7 @@ def api_myconfig():
         user_data = db.user.find_one({'id': payload['id']}, {'_id': 0})
         return jsonify({'result': 'success',
                         'payload': {'email': user_data['email'], 'notice_rate_up': user_data['notice_rate_up'],
-                                    'notice_rate_down': user_data['notice_rate_down']}})
+                                    'notice_rate_down': user_data['notice_rate_down'], 'notice_on': user_data['notice_on']}})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
@@ -137,7 +137,7 @@ def myconfig():
             notice_rate_down = float(request.form['notice_rate_down'].replace('%', ''))
         db.user.update_one({'id': user_data['id']}, {
             '$set': {'email': request.form['email'], 'notice_rate_up': notice_rate_up,
-                     'notice_rate_down': notice_rate_down}})
+                     'notice_rate_down': notice_rate_down, 'notice_on': request.form['notice_on']}})
         return jsonify({'result': 'success', 'msg': '설정이 저장되었습니다.'})
     else:
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
@@ -484,7 +484,7 @@ def get_my_stock():
                                                                              microsecond=0)
                     if float(stock_data['rate']) > 0:
                         targets = list(db.user.find(
-                            {'port.code': stock_data['code'], 'port.notice_date': {'$lte': yesterday},
+                            {'notice_on': 'true', 'port.code': stock_data['code'], 'port.notice_date': {'$lte': yesterday},
                              'notice_rate_up': {'$lte': float(stock_data['rate'])}},
                             {'_id': False, 'pw': False, 'port': False}))
                         for target in targets:
@@ -503,7 +503,7 @@ def get_my_stock():
 
                     elif float(stock_data['rate']) < 0:
                         targets = list(db.user.find(
-                            {'port.code': stock_data['code'], 'port.notice_date': {'$lte': yesterday},
+                            {'notice_on': 'true', 'port.code': stock_data['code'], 'port.notice_date': {'$lte': yesterday},
                              'notice_rate_down': {'$gte': float(stock_data['rate'])}},
                             {'_id': False, 'pw': False, 'port': False}))
                         for target in targets:
@@ -658,7 +658,11 @@ def stock_search():
         indexs = []
         search_result = []
         for index, sList in enumerate(search_db):
-            if search_keyword in sList['name']:
+            if not search_keyword.islower():
+                search_keyword = search_keyword.lower()
+                print('search_keyword: ',search_keyword)
+            sList_lower = sList['name'].lower()
+            if search_keyword in sList_lower:
                 indexs.append(index)
         for i in indexs:
             search_result.append(search_db[i])
@@ -667,16 +671,23 @@ def stock_search():
         return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
 
 
+def run_stock_save():
+    Thread(target=stock_save, daemon=True).start()
+
+
 def stock_save():
+    db.stock.remove()
+    today = datetime.now()
+    #db.stock.insert_one({'index': "", 'name': "", 'code': "", 'date': today})
+
     df = pd.read_html('http://kind.krx.co.kr/corpgeneral/corpList.do?method=download', header=0)[0]
     df = df.drop(df.columns[[2, 3, 4, 5, 6, 7, 8]], axis='columns')
     df = df.rename(columns={'회사명': 'name', '종목코드': 'code'})
 
     df.reset_index(inplace=True)
     db_df = df.to_dict("records")
-    db.stock.remove()
     db.stock.insert_many(db_df)
-    print('stock_save complete')
+    db.stock.update_one({'index': 0}, {'$set': {'date': today}})
 
 
 def run():
@@ -709,6 +720,7 @@ if __name__ == "__main__":
     #print(KST.strftime(fmt))
     #print(datetime.now())
 
+    stock_save()
 
     sched = BackgroundScheduler(daemon=True, timezone="Asia/Seoul")
     sched.start()
@@ -721,7 +733,7 @@ if __name__ == "__main__":
     sleep(20)
     sched.remove_job('check_stock_send_email')
     sched.add_job(run, 'cron', hour='9', minute='0', id="check_stock_send_email")
-    sched.add_job(stock_save, 'cron', hour='12', minute='30', id="stock_save")
+    sched.add_job(run_stock_save, 'cron', hour='12', minute='30', id="stock_save")
 
     app.run('0.0.0.0', port=5000, debug=True)
 

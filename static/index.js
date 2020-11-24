@@ -148,7 +148,7 @@ function myconfigGet() {
         success: function (response) {
             if (response['result'] == 'success') {
                 $('#user_id').text(response['payload']['email'])
-                if (response['payload']['notice_rate_up'] == "" && response['payload']['notice_rate_down'] == "") {
+                if (response['payload']['notice_rate_up'] == "" && response['payload']['notice_rate_down'] == "" || response['payload']['notice_on'] == "false") {
                     $('#notice_rate').text('우측 수정하기 버튼 클릭 후, 알람 조건을 설정해 주세요. 전일 대비 등락률이 설정값에 도달하면 이메일 알람이 발송됩니다.');
                     document.getElementById("notice_rate").style.fontWeight = 'bolder';
                     document.getElementById("notice_rate").style.color = 'khaki';
@@ -183,6 +183,11 @@ function myconfigModify() {
         success: function (response) {
             if (response['result'] == 'success') {
                 document.getElementById("useremail").placeholder = response['payload']['email'];
+                if (response['payload']['notice_on'] == "true") {
+                    document.getElementById("notice_check").checked = true;
+                } else {
+                    document.getElementById("notice_check").checked = false;
+                }
                 if (response['payload']['notice_rate_up'] !== "") {
                     document.getElementById("notice_rate_up").placeholder = response['payload']['notice_rate_up'];
                 } else {
@@ -203,12 +208,13 @@ function myconfigModify() {
 }
 
 function saveMyConfig() {
-    let email, notice_rate_up, notice_rate_down
+    let email, notice_rate_up, notice_rate_down, notice_on
     if ($('#useremail').val() == "") {
         email = document.getElementById("useremail").placeholder;
     } else {
         email = $('#useremail').val();
     }
+    notice_on = document.getElementById("notice_check").checked;
     if ($('#notice_rate_up').val() == "") {
         if ($.isNumeric(document.getElementById("notice_rate_up").placeholder)) {
             notice_rate_up = document.getElementById("notice_rate_up").placeholder;
@@ -237,7 +243,7 @@ function saveMyConfig() {
             type: "POST",
             url: "/api/myconfig",
             headers: {'token': $.cookie('mytoken')},
-            data: {'email': email, 'notice_rate_up': notice_rate_up, 'notice_rate_down': notice_rate_down},
+            data: {'email': email, 'notice_rate_up': notice_rate_up, 'notice_rate_down': notice_rate_down, 'notice_on': notice_on},
             success: function (response) {
                 if (response['result'] == 'success') {
                     let msg = response['msg'];
