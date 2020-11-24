@@ -129,7 +129,8 @@
                 </div>
             </div>
             <div class="flex_row">
-                <button class="btn btn-primary btn-sm" onclick="saveMyConfig()">수정</button>
+                <button class="btn btn-primary btn-sm" onclick="saveMyConfig()">&nbsp;&nbsp;&nbsp;&nbsp;수정&nbsp;&nbsp;&nbsp;&nbsp;</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="leaveConfirm()">회원탈퇴</button>
             </div>
             <div class="add_layer_close_button" onclick="closeconfiglayer()">Close</div>
         </div>
@@ -196,6 +197,9 @@
         <div class="min_width" onclick="myconfigModify()">수정하기</div>
         -->
         <button type="button" class="btn btn-light btn-sm" onclick="myconfigModify()">수정하기</button>
+    </div>
+    <div id="notice_api_state" style="text-align: center; padding-top: 5px">
+        <div style="display: inline-block">현재 API 서버 문제로 <span style="font-weight: bold">삼성전자(005930)</span> 등 일부 종목이&nbsp;</div><div style="display: inline-block">정상적으로 조회되지 않고 있습니다.&nbsp;</div><div style="display: inline-block">서비스 이용에 참고하시기 바랍니다.</div>
     </div>
 </div>
 <div>

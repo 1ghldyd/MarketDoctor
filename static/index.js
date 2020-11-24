@@ -333,6 +333,7 @@ function myportRefresh() {
             }
         }
     });
+    api_state_check();
 }
 
 function myportInfo(code, name) {
@@ -480,6 +481,7 @@ function myportInfo(code, name) {
             }
         }
     });
+    api_state_check();
 }
 
 /*
@@ -772,6 +774,55 @@ function mobile_check_scroll_move_top() {
     }
 }
 
+
+function api_state_check() {
+    $.ajax({
+        type: 'GET',
+        url: '/api/api_state_check',
+        headers: {'token': $.cookie('mytoken')},
+        data: {},
+        success: function (response) {
+            if (response['result'] == 'success') {
+                if (response['state'] == 'true') {
+                    document.getElementById("notice_api_state").style.display = 'none';
+                } else {
+                    document.getElementById("notice_api_state").style.display = 'block';
+                }
+            } else {
+                let msg = response['msg'];
+                alert(msg);
+            }
+        }
+    });
+}
+
+
+function leaveConfirm() {
+    let msg = '탈퇴하시면 모든 고객 정보가 삭제되며, 복구가 불가능합니다.\n정말로 탈퇴 하시겠습니까?';
+    if (confirm(msg) != 0) {
+        leave();
+    }
+}
+
+
+function leave() {
+    $.ajax({
+        type: 'POST',
+        url: '/api/leave',
+        headers: {'token': $.cookie('mytoken')},
+        data: {},
+        success: function (response) {
+            if (response['result'] == 'success') {
+                let msg = response['msg'];
+                alert(msg);
+            } else {
+                let msg = response['msg'];
+                alert(msg);
+            }
+        }
+    });
+    logout();
+}
 
 /*
 function search_enter() {

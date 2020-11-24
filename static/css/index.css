@@ -250,6 +250,10 @@ nav {
 }
 
 
+#notice_api_state {
+    display: none;
+}
+
 
 @media all and (max-width: 768px) {
     /* 모바일에 사용될 스트일 시트를 여기에 작성합니다. */

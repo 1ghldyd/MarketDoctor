@@ -51,6 +51,7 @@ get_stock_cur_data = []  # 멀티스레드용 전역함수
 get_stock_cur_data_lock = Lock()
 pool_sema = Semaphore(8)
 duration = ''
+api_state = 'true'
 
 @app.route('/')
 def home():
@@ -660,7 +661,6 @@ def stock_search():
         for index, sList in enumerate(search_db):
             if not search_keyword.islower():
                 search_keyword = search_keyword.lower()
-                print('search_keyword: ',search_keyword)
             sList_lower = sList['name'].lower()
             if search_keyword in sList_lower:
                 indexs.append(index)
@@ -709,6 +709,57 @@ def job():
     get_my_stock()
 
 
+def run_api_state_check():
+    Thread(target=api_state_check, daemon=True).start()
+
+
+def api_state_check():
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'}
+        temp = requests.get('http://asp1.krx.co.kr/servlet/krx.asp.XMLSiseEng?code=005930', headers=headers, timeout=60.0).content
+        temp = temp[1:]
+        root = ET.fromstring(temp)
+        global api_state
+        for type_tag in root.findall('TBL_StockInfo'):
+            if type_tag.get('CurJuka') == "":
+                api_state = 'false'
+            else:
+                api_state = 'true'
+        print('api_state_check: ',api_state)
+
+    except requests.Timeout as err:
+        print('timeout-네트워크 지연')
+        sleep(60)
+        api_state_check()
+
+    except HTTPError as e:
+        print(e)
+        sleep(60)
+        api_state_check()
+
+
+
+@app.route('/api/api_state_check', methods=['GET'])
+def api_state_return():
+    payload = token_payload_read()
+    if payload is not None:
+        global api_state
+        return jsonify({'result': 'success', 'state': api_state})
+    else:
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
+
+
+@app.route('/api/leave', methods=['POST'])
+def leave():
+    user = token_payload_read()
+    if user is not None:
+        db.user.delete_one({'id': user['id']})
+        return jsonify({'result': 'success', 'msg': '정상적으로 탈퇴되었습니다.'})
+    else:
+        return jsonify({'result': 'fail', 'msg': '다시 로그인 해주세요.'})
+
+
 if __name__ == "__main__":
 
     #fmt = "%Y-%m-%d %H:%M:%S %Z%z"
@@ -734,6 +785,7 @@ if __name__ == "__main__":
     sched.remove_job('check_stock_send_email')
     sched.add_job(run, 'cron', hour='9', minute='0', id="check_stock_send_email")
     sched.add_job(run_stock_save, 'cron', hour='12', minute='30', id="stock_save")
+    sched.add_job(run_api_state_check, 'interval', seconds=60, id="api_state_check")
 
     app.run('0.0.0.0', port=5000, debug=True)
 
