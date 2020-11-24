@@ -655,14 +655,19 @@ def stock_search():
         search_db = df.values.tolist() # Convert Pandas DataFrame into a List
         return jsonify({'result': 'success', 'search': search_db})
         '''
-        search_db = list(db.stock.find({},{'_id': False, 'index': False}))
+        search_db = list(db.stock.find({},{'_id': False, 'index': False, 'date':False}))
         indexs = []
         search_result = []
         for index, sList in enumerate(search_db):
             if not search_keyword.islower():
                 search_keyword = search_keyword.lower()
-            sList_lower = sList['name'].lower()
-            if search_keyword in sList_lower:
+            if not sList['name'].islower():
+                sList_name_lower = sList['name'].lower()
+            sList_code = str(sList['code'])
+            while len(sList_code) < 6:
+                sList_code = '0' + sList_code
+
+            if search_keyword in sList_name_lower or search_keyword in sList_code:
                 indexs.append(index)
         for i in indexs:
             search_result.append(search_db[i])
