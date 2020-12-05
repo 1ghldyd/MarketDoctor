@@ -7,6 +7,7 @@ $(document).ready(function () {
         $('#myport_box').empty();
         myconfigGet();
         myportRefresh();
+        api_state_check();
     }
 });
 

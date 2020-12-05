@@ -68,7 +68,7 @@ def api_register():
     else:
         pw_hash = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
         db.user.insert_one(
-            {'id': id, 'pw': pw_hash, 'email': id, 'notice_rate_up': '', 'notice_rate_down': '', 'notice_on': 'true',
+            {'id': id, 'pw': pw_hash, 'email': id, 'notice_rate_up': '', 'notice_rate_down': '', 'notice_on': 'false',
              'port': [], 'date_regsiter' : today, 'date_login' : ''})
         return jsonify({'result': 'success', 'msg': '회원가입이 완료되었습니다.'})
 
